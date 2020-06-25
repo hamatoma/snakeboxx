@@ -1,0 +1,2 @@
+#! /bin/bash
+pylint3 --rcfile=data/config/pylint3.conf app | less
