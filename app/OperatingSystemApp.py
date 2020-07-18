@@ -7,8 +7,8 @@ Created: 2020.06.24
 import sys
 import os.path
 import re
+import snakeboxx
 
-sys.path.insert(0, '/usr/share/snakeboxx')
 import base.Const
 import app.BaseApp
 import base.FileHelper
@@ -177,6 +177,7 @@ def main(args):
     '''Main function.
     @param args: the program arguments
     '''
+    snakeboxx.startApplication()
     application = OperatingSystemApp(args)
     application.main()
 

@@ -344,8 +344,7 @@ def mdadmInfo(filename='/proc/mdstat'):
                     rc.append([name, aType, members, int(blocks), status2])
                     continue
                 if line.find('recovery') > 0:
-                    # @ToFix: len is not subscriptable
-                    rc[len[rc - 1][4]] = 'recovery'
+                    rc[len(rc) - 1][4] = 'recovery'
     return rc
 
 

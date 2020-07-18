@@ -48,6 +48,21 @@ class RestHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
     '''Handles the requests for the REST service.
     There may be no constructor (invisible instantiation).
     '''
+    def __init__(self, request, client_address, server):
+        '''Constructor.
+        @param request
+        @param client_address
+        @param server
+        '''
+        http.server.BaseHTTPRequestHandler.__init__(self, request, client_address, server)
+        self.stringData = ''
+        self.byteData = b''
+        self.jsonData = None
+        self.httpStatus = 0
+        self.mediaType = None
+        self.inputBytes = b''
+        self.inputLength = 0
+        self.inputString = ''
 
     def callHandler(self, method):
         '''Search for the matching TaskHandler and calls it.

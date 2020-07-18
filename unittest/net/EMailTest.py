@@ -34,8 +34,7 @@ class EMailTest(UnitTestCase):
         email.sendTo('wk64@gmx.de', None, None, logger)
         signature = email.lastSignature()
         self.assertEquals('smtp.gmx.de|587|bigtoy-by@gmx.de|{}|bigtoy-by@gmx.de|wk64@gmx.de'.format(code), signature)
-        current = logger.getMessages()
-        self.assertEquals(0, len(current))
+        logger.contains('email "Testmail von Python" sent to wk64@gmx.de')
 
     def testEmailWithCC(self):
         #if DEBUG: return
@@ -48,8 +47,7 @@ class EMailTest(UnitTestCase):
         email.sendTo('wk64@gmx.de', 'test1@hamatoma.de+test2@hamatoma.de', None, logger)
         signature = email.lastSignature()
         self.assertEquals('smtp.gmx.de|587|bigtoy-by@gmx.de|{}|bigtoy-by@gmx.de|wk64@gmx.de'.format(code), signature)
-        current = logger.getMessages()
-        self.assertEquals(0, len(current))
+        logger.contains('email "Testmail+cc" sent to wk64@gmx.de')
 
     def testEmailWithBCC(self):
         if DEBUG: return
@@ -62,8 +60,7 @@ class EMailTest(UnitTestCase):
         email.sendTo('wk64@gmx.de', None, 'test1@hamatoma.de+test2@hamatoma.de', logger)
         signature = email.lastSignature()
         self.assertEquals('smtp.gmx.de|587|bigtoy-by@gmx.de|{}|bigtoy-by@gmx.de|wk64@gmx.de'.format(code), signature)
-        current = logger.getMessages()
-        self.assertEquals(0, len(current))
+        logger.contains('email "Testmail+bcc" sent to wk64@gmx.de')
 
     def testSendSimpleEmail(self):
         if DEBUG: return

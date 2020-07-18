@@ -124,6 +124,8 @@ def createFileTree(files, baseDirectory):
     '''
     lines = files.split('\n')
     for line in lines:
+        if line.strip() == '':
+            continue
         parts = line.split('|')
         full = baseDirectory + os.sep + parts[0]
         if parts[0].endswith('/'):

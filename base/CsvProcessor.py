@@ -12,7 +12,6 @@ import fnmatch
 import base.Const
 import base.StringUtils
 
-
 class CsvProcessor:
     '''A processor for finding/modifying text.
     '''
@@ -72,8 +71,8 @@ class CsvProcessor:
                     if step is not None:
                         value += step
                     self._rows[ixRow].insert(index, value)
-
-    def dataType(self, string):
+    @staticmethod
+    def dataType(string):
         '''Returns the data type of the given string.
         @param string: string to inspect
         @return the data type: None, str int
@@ -109,8 +108,8 @@ write:<filename>[,<delimiter>[,<backupExtension>]]
 Example:
 set-filter:name,prename info:summary,unique set-order:nam*,*pren* write:names.csv,tab,.%date%
 '''
-
-    def describe(self):
+    @staticmethod
+    def describe():
         '''Prints a description of the commands.
         '''
         print(CsvProcessor.__description)
@@ -216,8 +215,8 @@ set-filter:name,prename info:summary,unique set-order:nam*,*pren* write:names.cs
         if what.find('summary') >= 0:
             info = '== summary:\nRows: {}\nCols: {}\nHeaders: {} line(s)'.format(
                 len(self._rows), len(self._rows[0]), 1 if self._colNames else 0)
-            info += '\ndelimiter: {}\ndoublequote: {}\nescapechar: {}\nquotechar: {}'.format(self._dialect.delimiter,
-                                                                                             self._dialect.doublequote, self._dialect.escapechar, self._dialect.quotechar)
+            info += (f'\ndelimiter: {self._dialect.delimiter}\ndoublequote: {self._dialect.doublequote}'
+                     + f'\nescapechar: {self._dialect.escapechar}\nquotechar: {self._dialect.quotechar}')
             self._logger.log(info)
             for col in range(len(self._rows[0])):
                 info = '{} {} {}'.format(prefix(col),
@@ -260,7 +259,7 @@ set-filter:name,prename info:summary,unique set-order:nam*,*pren* write:names.cs
                             self._rowMaxCols = reader.line_num
                         if not self._dataTypes:
                             for col in row:
-                                currentType = self.dataType(col)
+                                currentType = CsvProcessor.dataType(col)
                                 self._dataTypes.append(currentType)
                                 self._hasEmpty.append(currentType is None)
                         else:

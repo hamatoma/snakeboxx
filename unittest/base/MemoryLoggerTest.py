@@ -3,8 +3,6 @@ Created on 12.04.2018
 
 @author: hm
 '''
-import re
-
 from unittest.UnitTestCase import UnitTestCase
 import base.MemoryLogger
 
@@ -59,7 +57,7 @@ class MemoryLoggerTest(UnitTestCase):
         self.assertTrue(logger.matches('[dj]umps'))
         self.assertFalse(logger.matches('Jonny'))
         self.assertFalse(logger.matches('jones'))
-        self.assertTrue(logger.matches('jones', flags=re.I))
+        self.assertTrue(logger.matches('jones', flags=base.Const.IGNORE_CASE))
         logger.error('dummy error')
         self.assertTrue(logger.matches('[dj]um', errorsToo=True))
         self.assertFalse(logger.matches('er+or', errorsToo=False))

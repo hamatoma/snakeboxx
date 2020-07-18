@@ -7,13 +7,13 @@ from unittest.UnitTestCase import UnitTestCase
 import base.StringUtils
 import base.CsvProcessor
 
-debug = False
+DEBUG = False
 
 class CsvProcessorTest(UnitTestCase):
 
     def __init__(self):
         UnitTestCase.__init__(self)
-        self._fn =  self.tempFile('test.csv', 'csvprocessor')
+        self._fn = self.tempFile('test.csv', 'csvprocessor')
         self.buildData()
 
     def buildData(self):
@@ -24,12 +24,12 @@ class CsvProcessorTest(UnitTestCase):
 ''')
 
     def testBasics(self):
-        if debug: return
+        if DEBUG: return
         processor = base.CsvProcessor.CsvProcessor(self._logger)
         self.assertEquals(0, processor._logger._errors)
 
     def testRead(self):
-        if debug: return
+        if DEBUG: return
         processor = base.CsvProcessor.CsvProcessor(self._logger)
         processor.readFile(self._fn)
         self.assertEquals('id;name;age', ';'.join(processor._colNames))
@@ -45,7 +45,7 @@ class CsvProcessorTest(UnitTestCase):
         self.assertEquals(2, processor._rowMaxCols)
 
     def testSetFilterIndexes(self):
-        if debug: return
+        if DEBUG: return
         processor = base.CsvProcessor.CsvProcessor(self._logger)
         processor.readFile(self._fn)
         processor.setFilterIndexes([2, '0'])
@@ -54,7 +54,7 @@ class CsvProcessorTest(UnitTestCase):
         self.assertEquals(2, processor._indexes[1])
 
     def testSetFilterCols(self):
-        if debug: return
+        if DEBUG: return
         processor = base.CsvProcessor.CsvProcessor(self._logger)
         processor.readFile(self._fn)
         processor.setFilterCols(['na*', 'a*'])
@@ -63,7 +63,7 @@ class CsvProcessorTest(UnitTestCase):
         self.assertEquals(2, processor._indexes[1])
 
     def testInfoSummary(self):
-        #if debug: return
+        #if DEBUG: return
         processor = base.CsvProcessor.CsvProcessor(self._logger)
         processor.readFile(self._fn)
         processor.setFilterIndexes([0, 1, 2])
@@ -74,7 +74,7 @@ class CsvProcessorTest(UnitTestCase):
         self._logger.contains("2 \"age\": <class 'int'> hasEmpty")
 
     def testInfoUniqueMinMax(self):
-        if debug: return
+        if DEBUG: return
         processor = base.CsvProcessor.CsvProcessor(self._logger)
         processor.readFile(self._fn)
         processor.setFilterIndexes([0, 1, 2])
@@ -82,7 +82,7 @@ class CsvProcessorTest(UnitTestCase):
         self._logger.contains('eve')
 
     def testSetColumnOrder(self):
-        if debug: return
+        if DEBUG: return
         processor = base.CsvProcessor.CsvProcessor(self._logger)
         processor.readFile(self._fn)
         processor.setColumnOrder(['a*', '*d', 'n*e'])
@@ -92,7 +92,7 @@ class CsvProcessorTest(UnitTestCase):
         self.assertEquals(1, processor._columnOrder[2])
 
     def testWriteFile(self):
-        if debug: return
+        if DEBUG: return
         processor = base.CsvProcessor.CsvProcessor(self._logger)
         processor.readFile(self._fn)
         processor.setColumnOrder(['a*', '*d', 'n*e'])
@@ -109,7 +109,7 @@ class CsvProcessorTest(UnitTestCase):
 ''', self._fn)
 
     def testExecute(self):
-        if debug: return
+        if DEBUG: return
         processor = base.CsvProcessor.CsvProcessor(self._logger)
         processor.readFile(self._fn)
         fn2 = self._fn.replace('.csv', '.bak')
@@ -127,7 +127,7 @@ write:,semicolon,.bak
 ''', self._fn)
 
     def testAddColumn(self):
-        if debug: return
+        if DEBUG: return
         processor = base.CsvProcessor.CsvProcessor(self._logger)
         self.buildData()
         processor.readFile(self._fn)
@@ -142,7 +142,7 @@ write:,semicolon,.bak
 ''', fn2)
 
     def testExecuteInfoMultiple(self):
-        #if debug: return
+        #if DEBUG: return
         processor = base.CsvProcessor.CsvProcessor(self._logger)
         processor.readFile(self._fn)
         fn2 = self._fn.replace('.csv', '.bak')
@@ -154,7 +154,7 @@ info:multiple
         self._logger.contains('22: 2')
 
     def testExecuteInfoMaxLength(self):
-        #if debug: return
+        #if DEBUG: return
         processor = base.CsvProcessor.CsvProcessor(self._logger)
         processor.readFile(self._fn)
         fn2 = self._fn.replace('.csv', '.bak')

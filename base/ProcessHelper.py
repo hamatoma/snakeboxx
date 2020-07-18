@@ -10,7 +10,6 @@ import subprocess
 import tempfile
 import os
 import time
-#import sys
 
 import base.StringUtils
 

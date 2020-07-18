@@ -50,7 +50,7 @@ class DirTraverser:
         self._findDirs = fileType.find('d') >= 0
         self._findLinks = fileType.find('l') >= 0
         self._filePattern = filePattern
-        self._dirPattern = dirPattern
+        self._dirPattern = '*' if dirPattern is None else dirPattern
         self._reDirExcludes = reDirExcludes
         self._reDirExcludes = None if reDirExcludes is None else (
             re.compile(reDirExcludes, base.Const.IGNORE_CASE) if isinstance(reDirExcludes, str) else
@@ -113,22 +113,22 @@ class DirTraverser:
         for node in os.listdir(directory):
             full = directory + os.sep + node
             statInfo = os.lstat(full)
-            isDir = stat.S_ISDIR(statInfo.st_mode)
-            if isDir:
+            self._isDir = stat.S_ISDIR(statInfo.st_mode)
+            if self._isDir:
                 self._ignoredDirs += 1
                 if (self._reDirExcludes is not None and self._reDirExcludes.search(node)):
                     continue
                 if not base.LinuxUtils.isReadable(statInfo, self._euid, self._egid):
-                    self._ignoredDirs += 1
+                    continue
                 elif self._dirMustWritable and not base.LinuxUtils.isReadable(statInfo, self._euid, self._egid):
-                    self._ignoredDirs += 1
+                    continue
                 elif depth < self._maxDepth:
                     dirs.append(node)
-                if not self._findDirs:
-                    continue
                 if depth < self._minDepth:
                     continue
                 self._ignoredDirs -= 1
+                if not self._findDirs:
+                    continue
                 if self._dirPattern == '*' or fnmatch.fnmatch(node, self._dirPattern):
                     self._dirInfo = statInfo
                     self._dirNode = node
@@ -177,6 +177,15 @@ class DirTraverser:
             full = directory + os.sep + node
             yield from self.next(full, depth + 1)
 
+    def summary(self):
+        '''Returns the info about the traverse process: count of files...
+        @return: the infotext
+        '''
+        rc = 'dir(s): {} file(s): {} / {}\nignored: dir(s): {} file(s): {}'.format(
+            self._countDirs, self._countFiles,
+            base.StringUtils.formatSize(self._bytesFiles),
+            self._ignoredDirs, self._ignoredFiles)
+        return rc
 
 def fromOptions(pattern, options, errors):
     '''Returns a DirTraverser instance initialized by given options.

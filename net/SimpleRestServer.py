@@ -21,6 +21,7 @@ class SimpleTaskHandler(net.RestServer.TaskHandler):
         @param method: the request method: 'DELETE', 'GET'
         @return True: the service can be handled
         '''
+        base.StringUtils.avoidWarning(method)
         return False
 
     def service(self, method):
@@ -71,6 +72,19 @@ class EchoTaskHandler(SimpleTaskHandler):
 class SimpleRestHTTPRequestHandler(net.RestServer.RestHTTPRequestHandler):
     '''Request handler for the SimpleRestServer.
     '''
+    def __init__(self, request, client_address, server):
+        '''Constructor.
+        @param request
+        @param client_address
+        @param server
+        '''
+        net.RestServer.RestHTTPRequestHandler.__init__(self, request, client_address, server)
+        self.paramMap = None
+        self.params = None
+        self.pathNodes = None
+        self.resources = None
+        self.task = None
+        self.resource = None
 
     def isValidPath(self, path):
         '''Inspects the path (part of the URL) whether the service can be handled.

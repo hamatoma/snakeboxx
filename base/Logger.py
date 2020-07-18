@@ -6,7 +6,7 @@ Created: 2020.06.24
 import os
 import datetime
 import base.BaseLogger
-
+import base.Const
 
 class Logger(base.BaseLogger.BaseLogger):
     '''A feature reach class for logging messages of different levels.
@@ -30,7 +30,7 @@ class Logger(base.BaseLogger.BaseLogger):
             print(msg)
             self.error(msg)
 
-    def log(self, message, minLevel=0):
+    def log(self, message, minLevel=base.Const.LEVEL_SUMMARY):
         '''Logs a message.
         @param message: the message to log
         @param minLevel: the logging is done only if _verboseLevel >= minLevel
@@ -47,8 +47,8 @@ class Logger(base.BaseLogger.BaseLogger):
             with open(self._logfile, 'a') as fp:
                 rc = True
                 fp.write(message + '\n')
-        except:
-            pass
+        except OSError as exc:
+            print(str(exc))
         return rc
 
 

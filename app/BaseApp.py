@@ -404,6 +404,21 @@ WantedBy=multi-user.target
             self._logger.log(
                 'creating starter {} -> {}'.format(app, source), base.Const.LEVEL_SUMMARY)
             os.symlink(source, app)
+            fn = '/usr/lib/python3/dist-packages/snakeboxx.py'
+            if not os.path.exists(fn):
+                self._logger.log('creating {} ...'.format(fn))
+                base.StringUtils.toFile(fn, """'''Prepare for usage of snakeboxx modules.
+'''
+import sys
+
+if '/usr/share/snakeboxx' not in sys.path:
+    sys.path.insert(0, '/usr/share/snakeboxx')
+
+def startApplication():
+    '''Starts the application.
+    In this version: do nothing
+    '''
+""")
 
     def installAsService(self, service, startAtOnce=False):
         '''Enables the service and start it (if wanted):

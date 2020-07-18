@@ -8,8 +8,8 @@ import sys
 import time
 import os.path
 import re
+import snakeboxx
 
-sys.path.insert(0, '/usr/share/snakeboxx')
 import base.Const
 import base.Scheduler
 import base.FileHelper
@@ -55,6 +55,7 @@ class FilesystemTaskInfo(base.Scheduler.TaskInfo):
         @param sliceInfo: the entry of the scheduler list
         @return True: success
         '''
+        base.StringUtils.avoidWarning(sliceInfo)
         self._application.sendFilesystemInfo(self._filesystem)
 
 
@@ -517,6 +518,7 @@ def main(args):
     '''Main function.
     @param args: the program arguments
     '''
+    snakeboxx.startApplication()
     application = SatelliteApp(args)
     application.main()
 

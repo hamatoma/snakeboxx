@@ -24,6 +24,7 @@ class UnitTestCase:
         self._isRoot = self._userId == 0
         self._inTestSuite = False
         self._errors = 0
+        self._summary = None
         self._name = type(self).__name__
         self._asserts = 0
         self._application = UnitTestAppInfo(self.usage)
@@ -31,6 +32,11 @@ class UnitTestCase:
         self._silentLogger = base.MemoryLogger.MemoryLogger(False)
         base.FileHelper.setLogger(self._logger)
 
+    def _finish(self):
+        '''The last action of a test case.
+        Should be overwritten by sub classes
+        '''
+ 
     def _describeDifference(self, str1, str2, prefix = ''):
         '''Logs the difference of two strings.
         @param str1: first string to compare
@@ -44,7 +50,7 @@ class UnitTestCase:
         for ix in range(min(count1, count2)):
             if str1[ix] != str2[ix]:
                 ixDiff = ix
-                break;
+                break
         if ixDiff != -1:
             rc = '+++ {:s}different at pos {:d}: {:s}/{:s}\n'.format(prefix, ixDiff + 1, str1[ixDiff:ixDiff+5], str2[ixDiff:ixDiff+5])
         elif count1 > count2:
@@ -54,7 +60,6 @@ class UnitTestCase:
         rc += str1 + '\n' + str2
         if ixDiff != -1:
             rc += '\n' + ('=' * ixDiff) + '^'
-            pass
         return rc
 
     def assertDirExists(self, current):
@@ -337,8 +342,7 @@ class UnitTestCase:
                 method()
         self._summary = '=== unit {:s}: {:d} assert(s) with {:d} error(s)'.format(self._name, self._asserts, self._errors)
         print(self._summary)
-        if hasattr(self, '_finish'):
-            self._finish()
+        self._finish()
 
     def setInTestSuite(self, value):
         '''Sets the attribute.
@@ -398,4 +402,3 @@ class UnitTestCase:
 if __name__ == '__main__':
     tester = UnitTestCase()
     tester.run()
-    pass

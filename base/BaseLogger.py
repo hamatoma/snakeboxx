@@ -3,7 +3,7 @@ Created: 2020.06.24
 @license: CC0 https://creativecommons.org/publicdomain/zero/1.0
 @author: hm
 '''
-
+import base.Const
 
 class BaseLogger:
     '''Base class of the loggers.
@@ -71,6 +71,13 @@ class BaseLogger:
             self.log(message)
             self._inUse = False
         return True
+
+    def log(self, minLevel=base.Const.LEVEL_SUMMARY):
+        '''Logs a message.
+        @param message: the string to log
+        @param level: logging will be done only if level >= self._verboseLevel
+        '''
+        raise NotImplementedError('BaseLogger.log(): must be overriden')
 
     def setMirror(self, logger):
         '''Sets a "mirror" logger: all messages are logged to the mirror too

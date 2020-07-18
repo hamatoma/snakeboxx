@@ -6,9 +6,8 @@ Created: 2020.06.24
 '''
 import sys
 import os
-#import time
+import snakeboxx
 
-sys.path.insert(0, '/usr/share/snakeboxx')
 import base.StringUtils
 import base.JobController
 import net.EMail
@@ -216,6 +215,7 @@ def main(args):
     '''Main function.
     @param args: the program arguments
     '''
+    snakeboxx.startApplication()
     application = EMailApp(args)
     application.main()
 

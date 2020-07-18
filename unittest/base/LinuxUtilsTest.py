@@ -10,7 +10,6 @@ class LinuxUtilsTest(UnitTestCase):
 
     def testDiskFree(self):
         infos = base.LinuxUtils.diskFree()
-        x = self.__dict__
         self.assertTrue(len(infos) >= 1)
         for info in infos:
             if info[0] not in ['/', '/opt', '/work', '/home'] and not info[0].startswith('/media') and info[0].find('jail') < 0:

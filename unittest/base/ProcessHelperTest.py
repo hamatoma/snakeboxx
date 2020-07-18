@@ -14,6 +14,7 @@ import base.Logger
 debug = False
 
 def usage(msg=None):
+    base.StringUtils.avoidWarning(msg)
     return 'test usage'
 
 class ProcessHelperTest(UnitTestCase):
@@ -43,19 +44,19 @@ class ProcessHelperTest(UnitTestCase):
 
     def testExecuteInputError(self):
         self._helper._logger.log('expecting an error:')
-        self._helper.executeInput(['veryUnknownCommand!', '[0-9]+'], True, 'line1\n\line222')
+        self._helper.executeInput(['veryUnknownCommand!', '[0-9]+'], True, 'line1\n\nline222')
         self.assertEquals(0, len(self._helper._output))
         self.assertEquals("[Errno 2] No such file or directory: 'veryUnknownCommand!': 'veryUnknownCommand!'", self._helper._error[0])
 
     def testExecuteScript(self):
-        rc = self._helper.executeScript('#! /bin/bash\n/bin/echo $1', 'getArg1', True, ['Hi world', 'Bye world'])
+        self._helper.executeScript('#! /bin/bash\n/bin/echo $1', 'getArg1', True, ['Hi world', 'Bye world'])
         #if self.assertEquals(1, len(rc)):
         #    self.assertEquals('Hi world', rc[0])
 
     def testExecuteInChain(self):
         fn = self.tempFile('gzip.input', 'unittest')
         base.StringUtils.toFile(fn, 'Hi')
-        rc = self._helper.executeInChain(['gzip', '-c', fn], None, ['zcat'], '!shell')
+        self._helper.executeInChain(['gzip', '-c', fn], None, ['zcat'], '!shell')
         #if self.assertEquals(1, len(rc)):
         #    self.assertEquals('Hi world', rc[0])
 

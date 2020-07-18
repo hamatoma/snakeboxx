@@ -446,7 +446,7 @@ def stringOption(longName, shortName, option):
             rc = ''
         elif option[len2] == '=':
             rc = option[len2 + 1:]
-    elif option.startswith('-' + shortName):
+    elif shortName is not None and option.startswith('-' + shortName):
         rc = option[2:]
     return rc
 

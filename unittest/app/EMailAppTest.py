@@ -15,6 +15,7 @@ import base.StringUtils
 debug = False
 
 def usage(msg=None):
+    base.StringUtils.avoidWarning(msg)
     return 'test usage'
 
 class EMailAppTest(UnitTestCase):
