@@ -16,7 +16,7 @@ import base.MemoryLogger
 import base.FileHelper
 import base.StringUtils
 
-debug = False
+DEBUG = True
 
 class FileHelperTest(UnitTestCase):
     def __init__(self):
@@ -40,7 +40,7 @@ class FileHelperTest(UnitTestCase):
         self.assertEquals(full, base.FileHelper.joinFilename(container))
 
     def testSplitFilenameJoinFilename(self):
-        if debug: return
+        if DEBUG: return
         container = base.FileHelper.splitFilename('/tmp/jonny.txt')
         self.checkPart(container, '/tmp/jonny.txt', '/tmp/', 'jonny.txt', 'jonny', '.txt')
         container = base.FileHelper.splitFilename('/home/authors/jonny.txt')
@@ -51,20 +51,20 @@ class FileHelperTest(UnitTestCase):
         self.checkPart(container, '.config', '', '.config', '.config', '')
 
     def testTail(self):
-        if debug: return
+        if DEBUG: return
         tail = base.FileHelper.tail(self._fn)
         self.assertEquals(1, len(tail))
         self.assertEquals('This file is in line 3', tail[0])
 
     def testTailNumbers(self):
-        if debug: return
+        if DEBUG: return
         tail = base.FileHelper.tail(self._fn, 2, True)
         self.assertEquals(2, len(tail))
         asString = ''.join(tail)
         self.assertEquals('2: line 2\n3: This file is in line 3', asString)
 
     def testDirectoryInfo(self):
-        if debug: return
+        if DEBUG: return
         info = base.FileHelper.directoryInfo('/etc', r'.*\.conf')
         self.assertTrue(info._fileCount > 0)
         self.assertTrue(info._fileSizes > 0)
@@ -75,11 +75,11 @@ class FileHelperTest(UnitTestCase):
         self.assertEquals(5, len(info._largest))
 
     def testPathToNode(self):
-        if debug: return
+        if DEBUG: return
         self.assertEquals('x__abc_def_x.txt', base.FileHelper.pathToNode('x:/abc/def/x.txt'))
 
     def testSetModified(self):
-        if debug: return
+        if DEBUG: return
         fn = self.tempFile('test.txt', self._baseNode)
         base.StringUtils.toFile(fn, 'Hi')
         yesterday = int(time.time()) - 86400
@@ -91,7 +91,7 @@ class FileHelperTest(UnitTestCase):
         self.assertEquals(januar2, os.path.getmtime(fn))
 
     def testDistinctPaths(self):
-        if debug: return
+        if DEBUG: return
         tempDir = self.tempDir('disticts', self._baseNode)
         self.clearDirectory(tempDir)
         dir1 = tempDir + os.sep + 'abc'
@@ -133,7 +133,7 @@ class FileHelperTest(UnitTestCase):
         self.assertFalse(base.FileHelper.distinctPaths(dir2, dirLinkLink))
 
     def testFromBytes(self):
-        if debug: return
+        if DEBUG: return
         self.assertEquals('ascii', base.FileHelper.fromBytes(b'ascii'))
         self.assertEquals('äöüÖÄÜß', base.FileHelper.fromBytes('äöüÖÄÜß'.encode('utf_8')))
         line = 'äöüÖÄÜß'.encode('latin-1')
@@ -148,7 +148,7 @@ class FileHelperTest(UnitTestCase):
         self.assertFalse('äöüÖÄÜß' == base.FileHelper.fromBytes(line))
 
     def testEnsureDir(self):
-        if debug: return
+        if DEBUG: return
         temp = self.tempDir('dir1', self._baseNode)
         # already exists
         base.FileHelper.ensureDirectory(temp)
@@ -183,7 +183,7 @@ class FileHelperTest(UnitTestCase):
         self.assertTrue(os.path.isdir(temp))
 
     def testEnsureFileDoesNotExist(self):
-        if debug: return
+        if DEBUG: return
         temp = self.tempDir('file', self._baseNode)
         # directory exists
         base.FileHelper.ensureFileDoesNotExist(temp)
@@ -209,7 +209,7 @@ class FileHelperTest(UnitTestCase):
         self.assertFalse(os.path.exists(temp))
 
     def testEnsureSymbolicLink(self):
-        if debug: return
+        if DEBUG: return
         tempDir = self.tempDir('jail', self._baseNode)
         target = tempDir + os.sep + 'parent'
         # creating base dir and target:
@@ -231,7 +231,7 @@ class FileHelperTest(UnitTestCase):
         self.assertEquals('../../sibling2', os.readlink(target))
 
     def testEnsureSymbolicLinkErrors(self):
-        if debug: return
+        if DEBUG: return
         tempDir = self.tempDir('jail', self._baseNode)
         target = tempDir + os.sep + 'parent'
         self.ensureDirectory(target)
@@ -248,7 +248,7 @@ class FileHelperTest(UnitTestCase):
         self.assertFalse(os.path.exists(target))
 
     def testFileClass(self):
-        if debug: return
+        if DEBUG: return
         baseDir = '/usr/share/pyrshell/unittest/data/'
         aClass, subClass = base.FileHelper.fileClass(baseDir + 'example.zip')
         self.assertEquals('container', aClass)
@@ -273,21 +273,21 @@ class FileHelperTest(UnitTestCase):
         self.assertEquals('text', subClass)
 
     def testEnsureFileExists(self):
-        if debug: return
+        if DEBUG: return
         fn = self.tempFile('should.exist.txt', self._baseNode)
         base.FileHelper.ensureFileDoesNotExist(fn)
         base.FileHelper.ensureFileExists(fn, 'Hi world')
         self.assertFileContains('Hi world', fn)
 
     def testEnsureFileExistsError(self):
-        if debug: return
+        if DEBUG: return
         fn = self.tempDir('blocking.dir', self._baseNode)
         self._logger.log('expectig error: blocking dir')
         base.FileHelper.ensureFileExists(fn, 'Hi')
         self.assertDirExists(fn)
 
     def testCopyDirectoryClear(self):
-        if debug: return
+        if DEBUG: return
         source = self.tempDir('src', self._baseNode)
         target = self.tempDir('trg', self._baseNode)
         base.StringUtils.toFile(source + '/hi.txt', 'Hi')
@@ -308,7 +308,7 @@ class FileHelperTest(UnitTestCase):
         self.assertEquals('hi.txt', os.readlink(fn))
 
     def testCopyDirectoryUpdate(self):
-        if debug: return
+        if DEBUG: return
         source = self.tempDir('src', self._baseNode)
         target = self.tempDir('trg', self._baseNode)
         base.StringUtils.toFile(source + '/hi.txt', 'Hi')
@@ -329,7 +329,7 @@ class FileHelperTest(UnitTestCase):
         self.assertFileContains('wow!', target + '/dir1/wow2.txt')
 
     def testUnpackTgz(self):
-        if debug: return
+        if DEBUG: return
         target = self.tempDir(self._baseNode)
         fn = target + os.sep + 'dummy'
         base.StringUtils.toFile(fn, '')
@@ -339,13 +339,13 @@ class FileHelperTest(UnitTestCase):
         self.assertFileExists(target + '/etc/nginx/sites-available/default')
 
     def testUnpackZip(self):
-        if debug: return
+        if DEBUG: return
         target = self.tempDir('archive', self._baseNode)
         base.FileHelper.unpack('/usr/share/pyrshell/unittest/data/example.zip', target, True)
         self.assertFileExists(target + '/All.sh')
 
     def testTempFile(self):
-        if debug: return
+        if DEBUG: return
         fn = base.FileHelper.tempFile('test.txt', 'unittest.2')
         parent = os.path.dirname(fn)
         self.assertEquals('test.txt', os.path.basename(fn))
@@ -354,7 +354,7 @@ class FileHelperTest(UnitTestCase):
         os.rmdir(parent)
 
     def testCreateTree(self):
-        if debug: return
+        if DEBUG: return
         base.FileHelper.ensureDirectory(self._baseDir)
         base.FileHelper.createFileTree('''tree1/
 tree1/file1|blaBla|660|2020-04-05 11:22:33
@@ -395,7 +395,7 @@ link|->tree1
         self.assertEquals('tree1', os.readlink(fn))
 
     def testCopyByRules(self):
-        if debug: return
+        if DEBUG: return
         base.FileHelper.ensureDirectory(self._baseDir)
         base.FileHelper.createFileTree('''skeleton/
 skeleton/.list|app
@@ -447,7 +447,7 @@ public/js:*:recursive
         self.assertDirExists(baseTarget + '/tmp/down')
 
     def testEndOfLinkChain(self):
-        if debug: return
+        if DEBUG: return
         end = self._baseDir + os.sep + 'end.txt'
         base.StringUtils.toFile(end, 'endOfLink')
         link1 = self._baseDir + os.sep + 'link1'
@@ -461,7 +461,7 @@ public/js:*:recursive
         self.assertNone(base.FileHelper.endOfLinkChain(link1))
 
     def testDeepRename(self):
-        if debug: return
+        if DEBUG: return
         first = self._baseDir + os.sep + 'first.txt'
         base.StringUtils.toFile(first, 'first')
         second = self._baseDir + os.sep + 'second.txt'
@@ -477,7 +477,7 @@ public/js:*:recursive
         self.assertFileContent('first', third)
 
     def testDeepRenameLink(self):
-        if debug: return
+        if DEBUG: return
         first = self._baseDir + os.sep + 'first.txt'
         base.StringUtils.toFile(first, 'first')
         second = self._baseDir + os.sep + 'second.txt'
@@ -494,7 +494,7 @@ public/js:*:recursive
         self.assertFileContent('first', second)
 
     def testDeepRenameLink2(self):
-        if debug: return
+        if DEBUG: return
         first = self.tempFile('first.txt', 'renamedir')
         base.StringUtils.toFile(first, 'first')
         second = self.tempFile('second.txt', 'renamedir')
@@ -511,7 +511,7 @@ public/js:*:recursive
         self.assertFileContent('first', second)
 
     def testDeepRenameError(self):
-        #if debug: return
+        if DEBUG: return
         self._logger.clear()
         self.assertFalse(base.FileHelper.deepRename('not#existising#file', 'realy#not#existising#file'))
         self.assertTrue(self._logger.contains('old name does not exist', errorsToo=True))
@@ -536,6 +536,33 @@ public/js:*:recursive
         self.assertFalse(base.FileHelper.deepRename(first, 'second.txt', deleteExisting=True))
         self.assertTrue(self._logger.contains('cannot remove new name', errorsToo=True))
         base.FileHelper.setUnitTestMode(None)
+
+    def testMoveFileRename(self):
+        if DEBUG: return
+        first = self.tempFile('first.txt', 'move')
+        second = self.tempFile('second.txt', 'move', 'trg')
+        base.StringUtils.toFile(first, '')
+        base.FileHelper.moveFile(first, second)
+        self.assertFileExists(second)
+        self.assertFileNotExists(first)
+        
+    def testMoveFileCopy(self):
+        if DEBUG: return
+        srcDir = '/opt/tmp'
+        if not os.path.exists(srcDir):
+            self._logger.log(f'>>> missing {srcDir}: cannot do the unit test')
+        else:
+            first = srcDir + os.sep + 'first'
+            second = self.tempFile('second.txt', 'move', 'trg')
+            base.StringUtils.toFile(first, '')
+            base.FileHelper.moveFile(first, second)
+            self.assertFileExists(second)
+            self.assertFileNotExists(first)
+
+    def testReplaceExtension(self):
+        #if DEBUG: return
+        self.assertEquals('/abc/def.abc', base.FileHelper.replaceExtension('/abc/def.txt', '.abc'))
+        self.assertEquals('/abc/.def.abc', base.FileHelper.replaceExtension('/abc/.def', '.abc'))
 
 if __name__ == '__main__':
     sys.argv = ['', 'Test.testName']

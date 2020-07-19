@@ -19,16 +19,23 @@ import app.BaseApp
 class OptionsExecuteRules:
     '''Options for the mode execute-rules.
     '''
+
     def __init__(self):
+        '''Constructor.
+        '''
         self.maxLoop = 1
         self.aboveFilename = False
         self.inPlace = None
         self.outPattern = None
 
+
 class OptionsGrep:
     '''Options for the mode grep
     '''
+
     def __init__(self):
+        '''Constructor.
+        '''
         self.wordOnly = False
         self.group = None
         self.lineNumber = False
@@ -36,12 +43,40 @@ class OptionsGrep:
         self.invertMatch = False
         self.formatFile = None
         self.formatLine = None
-        self.afterContext = None
-        self.beforeContext = None
+        self.belowContext = None
+        self.aboveContext = None
         self.formatFile = None
         self.formatLine = None
-        self.afterChars = None
-        self.beforeChars = None
+        self.belowChars = None
+        self.aboveChars = None
+
+
+class OptionsInsertOrReplace:
+    '''Options for the mode insert-or-replace
+    '''
+
+    def __init__(self):
+        '''Constructor.
+        '''
+        self.ignoreCase = False
+        self.anchor = None
+        self.above = False
+        self.backup = None
+
+
+class OptionsReplace:
+    '''Options for the mode replace
+    '''
+
+    def __init__(self):
+        '''Constructor.
+        '''
+        self.ignoreCase = False
+        self.backupExtensions = None
+        self.prefixBackref = None
+        self.wordOnly = None
+        self.notRegularExpr = False
+
 
 class TextApp(app.BaseApp.BaseApp):
     '''Performs some tasks with text files: searching, modification...
@@ -119,7 +154,95 @@ logfile=/var/log/local/textboxx.log
    all lines not containing the search expression is listed
   -w or --word-regexpr
    only whole words will be found
-''', r'''APP-NAME grep -n -g1 'Date:\s+(\d{4}\.\d\d\.\d\d)' "*.txt" --exclude-dirs=.git
+''', r'''APP-NAME grep -n -g1 'Date:\s+(\d{4}\.\d\d\.\d\d)' "*.txt" --exclude-dirs=.git --max-depth=2
+APP-NAME grep "[\w.+-]+@[\w.+-]+" "*.addr" --format-file="=== EMail addresses in file %f:" --format-line=%l:%T%t *.addr
+''')
+
+        self._usageInfo.addMode('insert-or-replace', '''insert-or-replace <key> <line> <file-pattern> <opts>
+ Searches <key>. If found this line is replaced by <line>.
+ If not found and option --anchor is given: <line> is inserted at this position.
+ <key>: the regular expression to identify the line to replace
+ <line>: the line to replace or insert
+ <file-pattern>: specifies the file(s) to process.
+ <opt>:
+  all options of the DirTraverser are allowed.
+  -A or --above
+   the insertion point is above the anchor 
+  -a<anchor> or --anchor=<anchor>
+   defines the insertion position if <key> is not found
+  -B<item> or --backup=<item>
+   if <item> is starting with ".": the unchanged file will be renamed with this extension
+   if <item> is a directory: the original file is moved to this directory
+   if not given no backup is done: the original file is modified
+  -i or --ignore-case
+   the search of <key> and <anchor> is case insensitive
+''', r'''APP-NAME insert-or-replace '^\s*memory_limit\s*=' "memory_limit=2048M" "/etc/php/7.3/fmt/php.ini" --anchor=php.net/memory-limit -Y1
+''')
+
+        self._usageInfo.addMode('replace', r'''replace <pattern> <replacement> <file-pattern> <opts>
+ Searches the regular expression in files.
+ <pattern>: the pattern to search, a regular expression only if --not-regexpr
+ <replacement>: the <reg-expr> will be replaced by this string. Can contain backreferences: see --prefix-backref
+ <file-pattern>:
+  file name pattern, with wilcards *, ? [chars] and [!not chars].
+ <opt>:
+  all options of the DirTraverser are allowed.
+  -B<item> or --backup=<item>
+   if <item> is starting with ".": the unchanged file will be renamed with this extension
+   if <item> is a directory: the original file is moved to this directory
+   if not given no backup is done: the original file is modified
+  -b<char> or --prefix-backticks:
+   if given <prefix><group> will be replaced by the group
+   example: opt: -b% reg-expr: "version: ([\d+.]+)" replacement: "V%1" string: "version: 4.7" result: "V4.7"
+  -i or --ignore-case
+   the search is case insensitive
+  -R or --not-regexpr
+   <pattern> is a string, not a regular expression
+  -w or --word-regexpr
+   only whole words will be found
+''', r'''APP-NAME replace "version: ([\d+.]+)" "V%1" "*.py" --prefix-backref=% -B.bak
+''')
+
+        self._usageInfo.addMode('replace-many', r'''replace-many <data-file> <file-pattern> <opts>
+ Searches the regular expression in <input> and print the processed (replaced) string.
+ This is useful for complex scripts.
+ <data-file>: a text file with lines "<string>TAB<replacement>"
+ <file-pattern>:
+  file name pattern, with wilcards *, ? [chars] and [!not chars].
+ <opt>:
+  all options of the DirTraverser are allowed.
+  -B<item> or --backup=<item>
+   if <item> is starting with ".": the unchanged file will be renamed with this extension
+   if <item> is a directory: the original file is moved to this directory
+   if not given no backup is done: the original file is modified
+  -b<char> or --prefix-backticks:
+   if given <prefix><group> will be replaced by the group
+   example: opt: -b% reg-expr: "version: ([\d+.]+)" replacement: "V%1" string: "version: 4.7" result: "V4.7"
+  -i or --ignore-case
+   the search is case insensitive
+  -w or --word-regexpr
+   only whole words will be found
+''', r'''APP-NAME replace-string "(files|dirs): (\d+)" "%2 %1" "files: 4 dirs: 9" --prefix-backref=%
+''')
+
+        self._usageInfo.addMode('replace-string', r'''replace <pattern> <replacement> <input> <opts>
+ Searches the regular expression in <input> and print the processed (replaced) string.
+ This is useful for complex scripts.
+ <pattern>: the pattern to search, a regular expression only if --not-regexpr
+ <replacement>: the <reg-expr> will be replaced by this string. Can contain backreferences: see --prefix-backref
+ <input>:
+  this string will be processed
+ <opt>:
+  -b<char> or --prefix-backticks:
+   if given <prefix><group> will be replaced by the group
+   example: opt: -b% reg-expr: "version: ([\d+.]+)" replacement: "V%1" string: "version: 4.7" result: "V4.7"
+  -i or --ignore-case
+   the search is case insensitive
+  -R or --not-regexpr
+   <pattern> is a string, not a regular expression
+  -w or --word-regexpr
+   only whole words will be found
+''', r'''APP-NAME replace-string "(files|dirs): (\d+)" "%2 %1" "files: 4 dirs: 9" --prefix-backref=%
 ''')
 
     def csvExecute(self):
@@ -131,7 +254,7 @@ logfile=/var/log/local/textboxx.log
         if wrong is not None:
             self.abort('too many arguments: ' + wrong)
         elif pattern is None:
-            self.abort('missing <file-pattern>')
+            self.abort('too few arguments')
         else:
             self._processor = base.CsvProcessor.CsvProcessor(self._logger)
             errors = []
@@ -150,7 +273,7 @@ logfile=/var/log/local/textboxx.log
     def describeRules(self):
         '''Displays the description of the rules.
         '''
-        item = base.TextProcessor.RuleList(self._logger)
+        item = base.SearchRuleList.SearchRuleList(self._logger)
         item.describe()
 
     def execRules(self):
@@ -234,12 +357,13 @@ logfile=/var/log/local/textboxx.log
         what = self.shiftProgramArgument()
         pattern = self.shiftProgramArgument()
         if pattern is None:
-            self.abort('missing <file-pattern>')
+            self.abort('too few arguments')
         else:
             options = self.grepOptions()
             if options.wordOnly:
                 what = r'\b' + what + r'\b'
-            regExpr = re.compile(what, base.Const.IGNORE_CASE if options.ignoreCase else 0)
+            regExpr = re.compile(
+                what, base.Const.IGNORE_CASE if options.ignoreCase else 0)
             errors = []
             self._traverser = base.DirTraverser.fromOptions(
                 pattern, self._programOptions, errors)
@@ -269,7 +393,7 @@ logfile=/var/log/local/textboxx.log
         while True:
             position = theFormat.find('%', last)
             if position > 0:
-                rc += theFormat[last:position] 
+                rc += theFormat[last:position]
             if position < 0:
                 rc += theFormat[last:]
                 break
@@ -314,45 +438,52 @@ logfile=/var/log/local/textboxx.log
             if self._logger._verboseLevel > 0:
                 self._resultLines.append(line)
             print(line)
+
         def outputContext(theFormat, fileNames, start, end, lines):
             while start < end:
-                line2 = TextApp.grepFormat(theFormat, fileNames, lines[start], start+1, None)
+                line2 = TextApp.grepFormat(
+                    theFormat, fileNames, lines[start], start + 1, None)
                 output(line2)
                 start += 1
             return end - 1
         lines = base.StringUtils.fromFile(filename, '\n')
-        nameList = [filename, os.path.dirname(filename), os.path.basename(filename)]
+        nameList = [filename, os.path.dirname(
+            filename), os.path.basename(filename)]
         first = True
         lastIx = -1
-        missingInterval = None
+        missingInterval = [None, None]
         for ix, line in enumerate(lines):
             matcher = regExpr.search(line)
             if matcher and first and options.formatFile is not None:
-                lastIx = output(TextApp.grepFormat(options.formatFile, nameList, None, None, None))
+                output(TextApp.grepFormat(
+                    options.formatFile, nameList, None, None, None))
                 first = False
             if matcher and not options.invertMatch or matcher is None and options.invertMatch:
-                if missingInterval is not None:
+                if missingInterval[0] is not None:
                     ix2 = min(ix, missingInterval[1])
-                    lastIx = outputContext(options.formatLine, nameList, missingInterval[0], ix2, lines)
-                    missingInterval = None
-                if options.beforeContext is not None:
-                    start = max(0, lastIx + 1, ix - options.beforeContext)
+                    lastIx = outputContext(
+                        options.formatLine, nameList, missingInterval[0], ix2, lines)
+                    missingInterval[0] = None
+                if options.aboveContext is not None:
+                    start = max(0, lastIx + 1, ix - options.aboveContext)
                     if start < ix:
-                        lastIx = outputContext(options.formatLine, nameList, start, ix, lines)
+                        lastIx = outputContext(
+                            options.formatLine, nameList, start, ix, lines)
                 if options.group is None:
-                    output(TextApp.grepFormat(options.formatLine, nameList, line, ix+1, matcher))
+                    output(TextApp.grepFormat(options.formatLine,
+                                              nameList, line, ix + 1, matcher))
                 else:
-                    self.grepOneLine(options, nameList, line, ix+1, regExpr)
+                    self.grepOneLine(options, nameList, line, ix + 1, regExpr)
                 lastIx = ix
-                if options.afterContext is not None:
-                    missingInterval = [ix + 1, ix + 1 + options.afterContext]
-        if missingInterval is not None:
+                if options.belowContext is not None:
+                    missingInterval = [ix + 1, ix + 1 + options.belowContext]
+        if missingInterval[0] is not None:
             lastIx = min(len(lines), missingInterval[1])
-            outputContext(options.formatLine, nameList, missingInterval[0], lastIx, lines)
+            outputContext(options.formatLine, nameList,
+                          missingInterval[0], lastIx, lines)
 
     def grepOneLine(self, options, nameList, line, lineNo, regExpr):
         '''Handles the multiple hits in one line.
-        
         @precondition: only the matching pattern should be displayed (not the whole line).
         @param options: the program options
         @param namelist: variants of the filename: [<full>, <path>, <node>]
@@ -363,12 +494,13 @@ logfile=/var/log/local/textboxx.log
         lineLength = len(line)
         for matcher in regExpr.finditer(line):
             start, end = matcher.span(options.group)
-            if options.beforeChars is not None:
-                start = max(0, start - options.beforeChars)
-            if options.afterChars is not None:
-                end = min(lineLength, end + options.afterChars)
+            if options.aboveChars is not None:
+                start = max(0, start - options.aboveChars)
+            if options.belowChars is not None:
+                end = min(lineLength, end + options.belowChars)
             info = line[start:end]
-            info2 = TextApp.grepFormat(options.formatLine, nameList, info, lineNo, matcher)
+            info2 = TextApp.grepFormat(
+                options.formatLine, nameList, info, lineNo, matcher)
             if self._logger._verboseLevel > 0:
                 self._resultLines.append(info2)
             print(info2)
@@ -415,41 +547,44 @@ logfile=/var/log/local/textboxx.log
                 toDelete.append(ix)
                 options.group = intValue
                 continue
-            intValue = base.StringUtils.intOption('after-context', 'A', option)
+            intValue = base.StringUtils.intOption('below-context', 'B', option)
             if intValue is not None:
                 toDelete.append(ix)
-                options.afterContext = intValue
+                options.belowContext = intValue
                 continue
-            intValue = base.StringUtils.intOption('before-context', 'B', option)
+            intValue = base.StringUtils.intOption(
+                'above-context', 'A', option)
             if intValue is not None:
                 toDelete.append(ix)
-                options.beforeContext = intValue
+                options.aboveContext = intValue
                 continue
-            intValue = base.StringUtils.intOption('after-chars', 'a', option)
+            intValue = base.StringUtils.intOption('below-chars', 'b', option)
             if intValue is not None:
                 toDelete.append(ix)
-                options.afterChars = intValue
+                options.belowChars = intValue
                 if options.group is None:
                     options.group = 0
                 continue
-            intValue = base.StringUtils.intOption('before-chars', 'b', option)
+            intValue = base.StringUtils.intOption('above-chars', 'a', option)
             if intValue is not None:
                 toDelete.append(ix)
-                options.beforeChars = intValue
+                options.aboveChars = intValue
                 if options.group is None:
                     options.group = 0
                 continue
             intValue = base.StringUtils.intOption('context', 'C', option)
             if intValue is not None:
                 toDelete.append(ix)
-                options.beforeContext = options.afterContext = intValue
+                options.aboveContext = options.belowContext = intValue
                 continue
-            strValue = base.StringUtils.stringOption('format-line', 'f', option)
+            strValue = base.StringUtils.stringOption(
+                'format-line', 'f', option)
             if strValue is not None:
                 toDelete.append(ix)
                 options.formatLine = strValue
                 continue
-            strValue = base.StringUtils.stringOption('format-file', 'F', option)
+            strValue = base.StringUtils.stringOption(
+                'format-file', 'F', option)
             if strValue is not None:
                 toDelete.append(ix)
                 options.formatFile = strValue
@@ -458,9 +593,209 @@ logfile=/var/log/local/textboxx.log
         for ix in toDelete:
             del self._programOptions[ix]
         if options.formatLine is None:
-            info = '%t' if options.group is None else '%{}'.format(options.group)
-            options.formatLine = ('%f-%#:' if options.lineNumber else '%f:') + info
+            info = '%t' if options.group is None else '%{}'.format(
+                options.group)
+            options.formatLine = (
+                '%f-%#:' if options.lineNumber else '%f:') + info
         return options
+
+    def insertOrReplace(self):
+        '''Searches regular expressions in files.
+        '''
+        self._resultLines = []
+        key = self.shiftProgramArgument()
+        line = self.shiftProgramArgument()
+        pattern = self.shiftProgramArgument()
+        if pattern is None:
+            self.abort('too few arguments')
+        else:
+            options = self.insertOrReplaceOptions()
+            if options.ignoreCase and options.anchor is not None:
+                options.anchor = re.compile(
+                    options.anchor.pattern, base.Const.IGNORE_CASE)
+            errors = []
+            self._traverser = base.DirTraverser.fromOptions(
+                pattern, self._programOptions, errors)
+            if errors:
+                for error in errors:
+                    self._logger.error(error)
+            else:
+                self._processor = base.TextProcessor.TextProcessor(self._logger)
+                self._traverser._findFiles = self._traverser._findLinks = True
+                self._traverser._findDirs = False
+                for filename in self._traverser.next(self._traverser._directory, 0):
+                    self._processor.readFile(filename)
+                    self._processor.insertOrReplace(key, line, options.anchor, options.above)
+                    if self._processor._hasChanged:
+                        self._processor.writeFile(filename, options.backup)
+
+    def insertOrReplaceOptions(self):
+        '''Evaluates the options for the mode "insert-or-replace".
+        @return: None: error occurred otherwise: the OptionsReplace instance
+        '''
+        options = OptionsInsertOrReplace()
+        toDelete = []
+        for ix, option in enumerate(self._programOptions):
+            boolValue = base.StringUtils.boolOption(
+                'ignore-case', 'i', option)
+            if boolValue is not None:
+                toDelete.append(ix)
+                options.ignoreCase = boolValue
+                continue
+            boolValue = base.StringUtils.boolOption(
+                'above', 'R', option)
+            if boolValue is not None:
+                toDelete.append(ix)
+                options.above = boolValue
+                continue
+            replValue = base.StringUtils.regExprOption(
+                'anchor', 'a', option)
+            if replValue is not None:
+                toDelete.append(ix)
+                options.anchor = replValue
+                continue
+            strValue = base.StringUtils.stringOption(
+                'backup', 'B', option)
+            if strValue is not None:
+                toDelete.append(ix)
+                options.backupExtensions = strValue
+                continue
+        return options
+
+    def replace(self):
+        '''Replaces a regular expression in files by a replacement.
+        '''
+        self._resultLines = []
+        what = self.shiftProgramArgument()
+        replacement = self.shiftProgramArgument()
+        pattern = self.shiftProgramArgument()
+        if pattern is None:
+            self.abort('too few arguments')
+        else:
+            self._processor = base.TextProcessor.TextProcessor(self._logger)
+            options = self.replaceOptions(True)
+            if options is not None:
+                errors = []
+                self._traverser = base.DirTraverser.fromOptions(
+                    pattern, self._programOptions, errors)
+                if errors:
+                    for error in errors:
+                        self._logger.error(error)
+                else:
+                    self._traverser._findFiles = self._traverser._findLinks = True
+                    self._traverser._findDirs = False
+                    for filename in self._traverser.next(self._traverser._directory, 0):
+                        self._processor.readFile(filename)
+                        hits = self._processor.replace(what, replacement, options.prefixBackref,
+                                                       options.notRegularExpr, True, options.wordOnly, options.ignoreCase)
+                        if hits > 0:
+                            self._processor.writeFile(
+                                filename, options.backupExtensions)
+
+    def replaceMany(self):
+        '''Replaces strings by replacements given in a file in files.
+        '''
+        self._resultLines = []
+        dataFile = self.shiftProgramArgument()
+        pattern = self.shiftProgramArgument()
+        if pattern is None:
+            self.abort('too few arguments')
+        elif not os.path.exists(dataFile):
+            self.abort('data file does not exists: ' + dataFile)
+        else:
+            what = []
+            replacements = []
+            lines = base.StringUtils.fromFile(dataFile, '\n')
+            for line in lines:
+                parts = line.split('\t')
+                if len(parts) == 2:
+                    what.append(parts[0])
+                    replacements.append(parts[1])
+            self._processor = base.TextProcessor.TextProcessor(self._logger)
+            options = self.replaceOptions(True)
+            if options is not None:
+                errors = []
+                self._traverser = base.DirTraverser.fromOptions(
+                    pattern, self._programOptions, errors)
+                if errors:
+                    for error in errors:
+                        self._logger.error(error)
+                else:
+                    self._traverser._findFiles = self._traverser._findLinks = True
+                    self._traverser._findDirs = False
+                    for filename in self._traverser.next(self._traverser._directory, 0):
+                        self._processor.readFile(filename)
+                        hits = self._processor.replaceMany(what, replacements)
+                        if hits > 0:
+                            self._processor.writeFile(
+                                filename, options.backupExtensions)
+
+    def replaceOptions(self, fileOptions):
+        '''Evaluates the options for the mode "replace", "replace-string" and "replace-many".
+        @param fileOptions: the mode is "replace" or "replace-many": operates on files
+        @return: None: error occurred otherwise: the OptionsReplace instance
+        '''
+        options = OptionsReplace()
+        toDelete = []
+        for ix, option in enumerate(self._programOptions):
+            boolValue = base.StringUtils.boolOption(
+                'word-regexpr', 'w', option)
+            if boolValue is not None:
+                toDelete.append(ix)
+                options.wordOnly = boolValue
+                continue
+            boolValue = base.StringUtils.boolOption(
+                'ignore-case', 'i', option)
+            if boolValue is not None:
+                toDelete.append(ix)
+                options.ignoreCase = boolValue
+                continue
+            boolValue = base.StringUtils.boolOption(
+                'not-regexpr', 'R', option)
+            if boolValue is not None:
+                toDelete.append(ix)
+                options.notRegularExpr = boolValue
+                continue
+            strValue = base.StringUtils.stringOption(
+                'prefix-backref', 'b', option)
+            if strValue is not None:
+                if len(strValue) != 1:
+                    self.argumentError(
+                        'prefix-backref must have length 1, not ' + strValue)
+                    options = None
+                    break
+                toDelete.append(ix)
+                options.prefixBackref = strValue
+                continue
+            if not fileOptions:
+                continue
+            strValue = base.StringUtils.stringOption(
+                'backup', 'B', option)
+            if strValue is not None:
+                toDelete.append(ix)
+                options.backupExtensions = strValue
+                continue
+        return options
+
+    def replaceString(self):
+        '''Replaces a regular expression in a given string by a replacement and display it.
+        '''
+        self._resultLines = []
+        what = self.shiftProgramArgument()
+        replacement = self.shiftProgramArgument()
+        inputString = self.shiftProgramArgument()
+        if inputString is None:
+            self.abort('too few arguments')
+        else:
+            self._processor = base.TextProcessor.TextProcessor(self._logger)
+            options = self.replaceOptions(True)
+            if options is not None:
+                self._processor.setContent(inputString)
+                self._processor.replace(what, replacement, options.prefixBackref,
+                                        options.notRegularExpr, True, options.wordOnly, options.ignoreCase)
+                info = '\n'.join(self._processor._lines)
+                self._resultText = info
+                print(info)
 
     def run(self):
         '''Implements the tasks of the application
@@ -476,6 +811,14 @@ logfile=/var/log/local/textboxx.log
             base.CsvProcessor.CsvProcessor.describe()
         elif self._mainMode == 'grep':
             self.grep()
+        elif self._mainMode == 'replace':
+            self.replace()
+        elif self._mainMode == 'replace-many':
+            self.replaceMany()
+        elif self._mainMode == 'replace-string':
+            self.replaceString()
+        elif self._mainMode == 'insert-or-replace':
+            self.insertOrReplace()
         else:
             self.abort('unknown mode: ' + self._mainMode)
 

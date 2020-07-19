@@ -6,7 +6,7 @@ Created on 12.04.2018
 from unittest.UnitTestCase import UnitTestCase
 import base.TextProcessor
 
-debug = False
+DEBUG = True
 
 class TextProcessorTest(UnitTestCase):
 
@@ -15,13 +15,13 @@ class TextProcessorTest(UnitTestCase):
         self._trace = self.tempFile('rules.log', 'trace')
 
     def testBasics(self):
-        if debug: return
+        if DEBUG: return
         processor = base.TextProcessor.TextProcessor(self._logger)
         processor._traceFile = self._trace
         self.assertEquals(0, processor._logger._errors)
 
     def testReplace(self):
-        if debug: return
+        if DEBUG: return
         content = '''# simple example? complete example?
 [Test]
 intVar = 993
@@ -61,7 +61,7 @@ strVar = "abc $strVar"
 ''', '\n'.join(processor._lines))
 
     def testRuleSearchForward(self):
-        if debug: return
+        if DEBUG: return
         processor = base.TextProcessor.TextProcessor(self._logger)
         processor._traceFile = self._trace
         processor.setContent('Hello World!')
@@ -70,7 +70,7 @@ strVar = "abc $strVar"
         self.assertEquals(6, processor.cursor('col'))
 
     def testRuleSearchBackward(self):
-        if debug: return
+        if DEBUG: return
         processor = base.TextProcessor.TextProcessor(self._logger)
         processor._traceFile = self._trace
         processor.setContent('abc\nHello World!\nHi!')
@@ -79,7 +79,7 @@ strVar = "abc $strVar"
         self.assertEquals(8, processor.cursor('col'))
 
     def testRuleAnchors(self):
-        if debug: return
+        if DEBUG: return
         processor = base.TextProcessor.TextProcessor(self._logger)
         processor._traceFile = self._trace
         processor.setContent('abc\nHello World!\nHi!')
@@ -116,7 +116,7 @@ strVar = "abc $strVar"
         self.assertEquals(0, processor.cursor('col'))
 
     def testRuleReposition(self):
-        if debug: return
+        if DEBUG: return
         processor = base.TextProcessor.TextProcessor(self._logger)
         processor._traceFile = self._trace
         processor.setContent('abc\ndef\nHello World!\nHi\nGreetings!')
@@ -134,7 +134,7 @@ strVar = "abc $strVar"
 
 
     def testRuleMarkSwap(self):
-        if debug: return
+        if DEBUG: return
         processor = base.TextProcessor.TextProcessor(self._logger)
         processor._traceFile = self._trace
         processor.setContent('abc\ndef\nHello World!\nHi\nGreetings!')
@@ -143,7 +143,7 @@ strVar = "abc $strVar"
         self.assertEquals(6, processor.cursor('col'))
 
     def testRuleSet(self):
-        if debug: return
+        if DEBUG: return
         processor = base.TextProcessor.TextProcessor(self._logger)
         processor._traceFile = self._trace
         processor.setContent('abc\ndef\nHello World!\nHi\nGreetings!')
@@ -152,7 +152,7 @@ strVar = "abc $strVar"
         self.assertEquals('World!A', processor._lastState.getRegister('A'))
 
     def testRuleAdd(self):
-        if debug: return
+        if DEBUG: return
         processor = base.TextProcessor.TextProcessor(self._logger)
         processor._traceFile = self._trace
         processor.setContent('abc\ndef\nHello World!\nHi\nGreetings!')
@@ -160,7 +160,7 @@ strVar = "abc $strVar"
         self.assertEquals('World.+.World.+.', processor._lastState.getRegister('A'))
 
     def testRuleCut(self):
-        if debug: return
+        if DEBUG: return
         processor = base.TextProcessor.TextProcessor(self._logger)
         processor._traceFile = self._trace
 
@@ -174,7 +174,7 @@ strVar = "abc $strVar"
         self.assertEquals('b\n12', processor._lastState.getRegister('Q'))
 
     def testRuleInsert(self):
-        if debug: return
+        if DEBUG: return
         processor = base.TextProcessor.TextProcessor(self._logger)
         processor._traceFile = self._trace
 
@@ -191,7 +191,7 @@ strVar = "abc $strVar"
         self.assertEquals(6, processor.cursor('col'))
 
     def testRuleGroup(self):
-        if debug: return
+        if DEBUG: return
         processor = base.TextProcessor.TextProcessor(self._logger)
         processor._traceFile = self._trace
 
@@ -200,7 +200,7 @@ strVar = "abc $strVar"
         self.assertEquals('123', processor._lastState.getRegister('Z'))
 
     def testRulePrint(self):
-        if debug: return
+        if DEBUG: return
         processor = base.TextProcessor.TextProcessor(self._logger)
         processor._traceFile = self._trace
 
@@ -209,7 +209,7 @@ strVar = "abc $strVar"
         self.assertTrue(processor._lastState is not None and processor._lastState._success)
 
     def testRuleReplace(self):
-        if debug: return
+        if DEBUG: return
         processor = base.TextProcessor.TextProcessor(self._logger)
         processor._traceFile = self._trace
 
@@ -236,7 +236,7 @@ strVar = "abc $strVar"
         self.assertEquals('ab#\n######\n##z', '\n'.join(processor._lines))
 
     def testRuleJump(self):
-        if debug: return
+        if DEBUG: return
         processor = base.TextProcessor.TextProcessor(self._logger)
         processor._traceFile = self._trace
 
@@ -253,7 +253,7 @@ strVar = "abc $strVar"
         self.assertEquals(1, processor.cursor('col'))
 
     def testFlowControlOnSuccess(self):
-        if debug: return
+        if DEBUG: return
         processor = base.TextProcessor.TextProcessor(self._logger)
         processor._traceFile = self._trace
         processor.setContent('ab\n123\nZ')
@@ -261,7 +261,7 @@ strVar = "abc $strVar"
         self.assertEquals(1, processor.cursor('line'))
 
     def testRuleExpr(self):
-        if debug: return
+        if DEBUG: return
         processor = base.TextProcessor.TextProcessor(self._logger)
         processor._traceFile = self._trace
 
@@ -272,15 +272,37 @@ strVar = "abc $strVar"
         self.assertEquals('5', processor._lastState.getRegister('B'))
 
     def testRuleState(self):
-        #if debug: return
+        if DEBUG: return
         processor = base.TextProcessor.TextProcessor(self._logger)
         processor._traceFile = self._trace
 
-        processor.setContent('ab\n1234567\nx')
+        processor.setContent('ab\n1234567\n# end of file')
         # ............................................5..........2..........16..........5
         processor.executeRules(r'1:4 state-A:"row" state-B:"col" state-C:"rows" set-Z:"$A:$B:$C"e=$')
         self.assertTrue(processor._lastState is not None and processor._lastState._success)
         self.assertEquals('2:5:3', processor._lastState.getRegister('Z'))
+
+    def testInsertOrReplace(self):
+        #if DEBUG: return
+        processor = base.TextProcessor.TextProcessor(self._logger)
+        processor._traceFile = self._trace
+
+        processor.setContent('#! /bin/sh\n  abc=123\nx')
+        processor.insertOrReplace(r'\s*abc\s*=\s*\d+', '  abc=456')
+        self.assertEquals(3, len(processor._lines))
+        self.assertEquals('  abc=456', processor._lines[1])
+
+        processor.insertOrReplace(r'\s*xyz\s*=\s*\d+', 'xyz=Hi', '/bin/sh')
+        self.assertEquals(4, len(processor._lines))
+        self.assertEquals('xyz=Hi', processor._lines[1])
+
+        processor.insertOrReplace(r'\s*k\s*=\s*\d+', 'k=99', 'end of file', above=True)
+        self.assertEquals(5, len(processor._lines))
+        self.assertEquals('k=99', processor._lines[4])
+
+        processor.insertOrReplace(r'LLL=', 'LLL=blub', 'not available', above=True)
+        self.assertEquals(6, len(processor._lines))
+        self.assertEquals('LLL=blub', processor._lines[5])
 
 if __name__ == '__main__':
     #import sys;sys.argv = ['', 'Test.testName']

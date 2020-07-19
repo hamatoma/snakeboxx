@@ -109,6 +109,35 @@ def clearDirectory(path):
                 _error('cannot remove: ' + full)
 
 
+def createBackup(source, target=None, extension=None, expandPlaceholders=True, checkEqualNames=True):
+    '''Save the source as target to save a file as backup.
+    @param source: the file to backup
+    @param target: the "safe place" of the file
+    @param expandPlaceholders: True: the following placeholders in target will be expanded:
+        @see expandPathPlaceholders() for more info
+    @param checkEqualNames: True: the test is done whether source != target 
+    '''
+    if target is None:
+        if extension.find('%') >= 0:
+            extension = expandPlaceholders(extension, source)
+        if not extension.startswith('.'):
+            extension = '.' + extension
+        deepRename(source, extension, deleteExisting=True)
+    else:
+        if expandPlaceholders and target.find('%') >= 0:
+            target = expandPlaceholders(target, source)
+        if os.path.isdir(target):
+            target += os.sep + os.path.basename(source)
+        elif target.find(os.sep) < 0:
+            pass
+        if checkEqualNames and os.path.realpath(source) != os.path.realpath(target):
+            target += '~'
+        if target.os.path.islink(source):
+            pass
+        else:
+            moveFile(source, target)
+
+
 def createFileTree(files, baseDirectory):
     '''Creates a directory tree with files specified in a text: each line contains one dir/file
     Specification: one file/dir per line (directories does not have a content)
@@ -701,6 +730,37 @@ def ensureSymbolicLink(source, target, createTarget=True):
     rc = os.path.islink(target) and os.readlink(target) == source
     return rc
 
+def expandPathPlaceholders(pattern, filename):
+    '''Expands placeholders in a pattern with the current date time or parts of a related filename.
+    @param pattern: a string with placeholders:
+        %date%: the current date %datetime%: the current date and time
+        %seconds%: the current date time as seconds after the epoche
+        %path%: the path of source %node%: the node of source
+        %name%: the name of source (without extension) %ext%: the extension of source
+    @param filename: the placeholders can be parts of this filename
+    @return: pattern with expanded placeholders
+    '''
+    parts = splitFilename(filename)
+    now = datetime.datetime.now()
+    for matcher in re.finditer(r'%(date(time)?|seconds|path|node|name|ext)%', pattern):
+        name = matcher.group(1)
+        macro = matcher.group(0)
+        if name == 'date':
+            value = now.strftime('%Y.%m.%d')
+        elif name == 'datetime':
+            value = now.strftime('%Y.%m.%d-%H_%M_%S')
+        elif name == 'seconds':
+            value = now.strftime('%a')
+        elif name == 'path':
+            value = parts['path']
+        elif name == 'node':
+            value = parts['node']
+        elif name == 'name':
+            value = parts['fn']
+        elif name == 'ext':
+            value = parts['ext']
+        pattern = pattern.replace(macro, value)
+    return pattern
 
 def fileClass(path):
     '''Returns the file class of the file.
@@ -890,12 +950,53 @@ def listFile(statInfo, full, orderDateSize=True, humanReadable=True):
     return rc
 
 
+def moveFile(source, target, removeAlways=True, createBaseDir=True):
+    '''Moves a file from one location to another.
+    If both parent directories are in the same filesytem rename is used.
+    Otherwise a copy is done and a deletion of the source.
+    @param source: the file to move
+    @param target: the target filename
+    @param removeAlways: True: the source will be deleted after copying
+    @param createBaseDir: True: the parent directory of target will be created if it does not exists
+    '''
+    if createBaseDir:
+        baseDir = os.path.dirname(target)
+        ensureDirectory(baseDir)
+    try:
+        os.rename(source, target)
+    except OSError:
+        try:
+            shutil.copy2(source, target)
+            if removeAlways:
+                try:
+                    os.unlink(source)
+                except OSError as exc2:
+                    _error(f'cannot delete {source} after moving: {exc2}')
+        except OSError as exc:
+            _error(f'cannot copy {source} to {target}: {exc}')
+
+
 def pathToNode(path):
     '''Changed a path into a name which can be used as node (of a filename).
     @param path: the path to convert
     @return: path with replaced path separators
     '''
     rc = path.replace(os.sep, '_').replace(':', '_')
+    return rc
+
+
+def replaceExtension(filename, extension):
+    '''Replaces the extension of a filename.
+    @param filename: the filename to process
+    @param extension: the new extension
+    @return: the filename with the new extension
+    '''
+    ix = filename.rfind('.')
+    ix2 = filename.rfind(os.sep)
+    if ix > ix2 + 1:
+        rc = filename[0:ix] + extension
+    else:
+        rc = filename + extension
     return rc
 
 

@@ -17,7 +17,7 @@ import base.FileHelper
 import base.UsageInfo
 import base.ProcessHelper
 
-VERSION = '2020.06.24.00'
+VERSION = '2020.07.19.00'
 
 
 class BaseApp:

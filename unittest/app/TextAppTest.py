@@ -14,6 +14,7 @@ import base.StringUtils
 
 DEBUG = False
 
+
 class TextAppTest(UnitTestCase):
     def __init__(self):
         UnitTestCase.__init__(self)
@@ -22,7 +23,8 @@ class TextAppTest(UnitTestCase):
         self._createConfig()
 
     def _createConfig(self):
-        self._configFile = self.tempFile('satellite.conf', 'unittest.txt', 'textboxx')
+        self._configFile = self.tempFile(
+            'satellite.conf', 'unittest.txt', 'textboxx')
         self._configDir = os.path.dirname(self._configFile)
         self._logFile = self._configDir + os.sep + 'test.log'
         base.StringUtils.toFile(self._configFile, '''# created by TextApp
@@ -33,10 +35,11 @@ logger={}
         shutil.rmtree(self.tempDir('unittest.txt'))
 
     def testInstall(self):
-        if DEBUG: return
+        if DEBUG:
+            return
         app.TextApp.main(['-v3', '--test-target=' + self._configDir, '--test-source=' + self._configDir, '-c' + self._configDir,
-            'install', 'osboxx'
-            ])
+                          'install', 'osboxx'
+                          ])
         application = app.BaseApp.BaseApp.lastInstance()
         self.assertEquals(0, application._logger._errors)
         fn = self._configDir + os.sep + 'text.conf'
@@ -46,22 +49,24 @@ logfile=/var/log/local/textboxx.log
 '''.format(), fn)
 
     def testUninstall(self):
-        if DEBUG: return
+        if DEBUG:
+            return
         base.FileHelper.clearDirectory(self._configDir)
         fnApp = self._configDir + os.sep + 'textboxx'
         base.StringUtils.toFile(fnApp, 'application')
         app.TextApp.main(['-v3', '--test-target=' + self._configDir, '--test-source=' + self._configDir, '-c' + self._configDir,
-            'uninstall', '--service=textboxx'
-            ])
+                          'uninstall', '--service=textboxx'
+                          ])
         email = app.BaseApp.BaseApp.lastInstance()
         self.assertEquals(0, email._logger._errors)
         self.assertFileNotExists(fnApp)
 
     def testHelp(self):
-        if DEBUG: return
+        if DEBUG:
+            return
         app.TextApp.main(['-v3',
-            'help', 'help'
-            ])
+                          'help', 'help'
+                          ])
         application = app.BaseApp.BaseApp.lastInstance()
         self.assertEquals(0, application._logger._errors)
         self.assertEquals('''textboxx <global-opts> <mode> [<opts>]
@@ -79,14 +84,15 @@ textboxx help help sub
 ''', application._resultText)
 
     def testExecRules(self):
-        if DEBUG: return
-        fn =  self.tempFile('exec.test', 'execrules')
+        if DEBUG:
+            return
+        fn = self.tempFile('exec.test', 'execrules')
         base.StringUtils.toFile(fn, '''abc
 xy123
 def''')
         app.TextApp.main(['-v3',
-            'exec-rules', '>/2/', fn
-            ])
+                          'exec-rules', '>/2/', fn
+                          ])
         application = app.BaseApp.BaseApp.lastInstance()
         self.assertEquals(0, application._logger._errors)
         state = application._processor._lastState
@@ -94,35 +100,38 @@ def''')
         self.assertEquals(3, state._cursor._col)
 
     def testCsvDescribe(self):
-        if DEBUG: return
+        if DEBUG:
+            return
         app.TextApp.main(['-v3',
-            'csv-describe'
-            ])
+                          'csv-describe'
+                          ])
         application = app.BaseApp.BaseApp.lastInstance()
         self.assertEquals(0, application._logger._errors)
 
     def testCsvExecute(self):
-        if DEBUG: return
-        fn =  self.tempFile('test.csv', 'csv')
+        if DEBUG:
+            return
+        fn = self.tempFile('test.csv', 'csv')
         base.StringUtils.toFile(fn, '''id,name
 1,jonny
 2,eve
 ''')
         app.TextApp.main(['-v3',
-            'csv-execute', 'info:summary', fn
-            ])
+                          'csv-execute', 'info:summary', fn
+                          ])
         application = app.BaseApp.BaseApp.lastInstance()
         self.assertEquals(0, application._logger._errors)
 
     def testExecRules2(self):
-        if DEBUG: return
-        fn =  self.tempFile('exec.test', 'execrules')
+        if DEBUG:
+            return
+        fn = self.tempFile('exec.test', 'execrules')
         base.StringUtils.toFile(fn, '''abc
 xy123
 def''')
         app.TextApp.main(['-v3',
-            'exec-rules', '>/2/ </Y/i', fn
-            ])
+                          'exec-rules', '>/2/ </Y/i', fn
+                          ])
         application = app.BaseApp.BaseApp.lastInstance()
         self.assertEquals(0, application._logger._errors)
         state = application._processor._lastState
@@ -130,70 +139,75 @@ def''')
         self.assertEquals(1, state._cursor._col)
 
     def testGrep(self):
-        if DEBUG: return
-        fn =  self.tempFile('test1.txt', 'grep')
+        if DEBUG:
+            return
+        fn = self.tempFile('test1.txt', 'grep')
         base.StringUtils.toFile(fn, '''abc
 xy123
 def''')
         app.TextApp.main(['-v3',
-            'grep', r'\d+', fn
-            ])
+                          'grep', r'\d+', fn
+                          ])
         application = app.BaseApp.BaseApp.lastInstance()
         self.assertEquals(0, application._logger._errors)
         self.assertEquals(1, len(application._resultLines))
         self.assertMatches('test1.txt:xy123', application._resultLines[0])
 
     def testGrepFormat(self):
-        if DEBUG: return
-        fn =  self.tempFile('test1.txt', 'grep')
+        if DEBUG:
+            return
+        fn = self.tempFile('test1.txt', 'grep')
         base.StringUtils.toFile(fn, '''abc
 xy123
 def''')
         app.TextApp.main(['-v3',
-            'grep', r'\d+', fn, '-f%%%T%# %0', '--format-line=%%%T%# %0', '-F== File %p %n%L', '--format-file=== File %p %n%L'
-            ])
+                          'grep', r'\d+', fn, '-f%%%T%# %0', '--format-line=%%%T%# %0', '-F== File %p %n%L', '--format-file=== File %p %n%L'
+                          ])
         application = app.BaseApp.BaseApp.lastInstance()
         self.assertEquals(0, application._logger._errors)
         self.assertEquals(2, len(application._resultLines))
-        self.assertMatches('== File \S+grep test1.txt\n', application._resultLines[0])
+        self.assertMatches('== File \S+grep test1.txt\n',
+                           application._resultLines[0])
         self.assertEquals('%\t2 123', application._resultLines[1])
 
     def testGrepIgnoreInvertLineNumber(self):
-        if DEBUG: return
-        fn =  self.tempFile('test1.txt', 'grep')
+        if DEBUG:
+            return
+        fn = self.tempFile('test1.txt', 'grep')
         base.StringUtils.toFile(fn, '''abc
 xy123
 BCD''')
         app.TextApp.main(['-v3',
-            'grep', r'B', fn, '-v', '--invert-match', '-i', '--ignore-case', '-n', '--line-number'
-            ])
+                          'grep', r'B', fn, '-v', '--invert-match', '-i', '--ignore-case', '-n', '--line-number'
+                          ])
         application = app.BaseApp.BaseApp.lastInstance()
         self.assertEquals(0, application._logger._errors)
         self.assertEquals(1, len(application._resultLines))
         self.assertMatches('test1.txt-2:xy123', application._resultLines[0])
 
     def testGrepWordMatchOnly(self):
-        if DEBUG: return
-        fn =  self.tempFile('test1.txt', 'grep')
+        if DEBUG:
+            return
+        fn = self.tempFile('test1.txt', 'grep')
         base.StringUtils.toFile(fn, '''ab.c
 xy123
 B._C.D''')
         app.TextApp.main(['-v3',
-            'grep', r'\w\w', fn, '-o', '-w', '-n', '--word-regexpr', '--only-matching'
-            ])
+                          'grep', r'\w\w', fn, '-o', '-w', '-n', '--word-regexpr', '--only-matching'
+                          ])
         application = app.BaseApp.BaseApp.lastInstance()
         self.assertEquals(0, application._logger._errors)
         self.assertEquals(2, len(application._resultLines))
         self.assertMatches('test1.txt-1:ab', application._resultLines[0])
         self.assertMatches('test1.txt-3:_C', application._resultLines[1])
 
-    def testGrepBeforeContext(self):
-        #if DEBUG: return
-        fn =  self.tempFile('test1.txt', 'grep')
+    def testGrepAboveContext(self):
+        # if DEBUG: return
+        fn = self.tempFile('test1.txt', 'grep')
         base.StringUtils.toFile(fn, 'a\nb\nc\nd\ne\nf')
         app.TextApp.main(['-v3',
-            'grep', r'[abe]', fn, '--before-context=1', '--line-number'
-            ])
+                          'grep', r'[abe]', fn, '-A1', '--above-context=1', '--line-number'
+                          ])
         application = app.BaseApp.BaseApp.lastInstance()
         self.assertEquals(0, application._logger._errors)
         self.assertEquals(4, len(application._resultLines))
@@ -202,28 +216,14 @@ B._C.D''')
         self.assertMatches('test1.txt-4:d', application._resultLines[2])
         self.assertMatches('test1.txt-5:e', application._resultLines[3])
 
-    def testGrepBeforeContext(self):
-        if DEBUG: return
-        fn =  self.tempFile('test1.txt', 'grep')
-        base.StringUtils.toFile(fn, 'a\nb\nc\nd\ne\nf')
-        app.TextApp.main(['-v3',
-            'grep', r'[abe]', fn, '-B1', '--before-context=1', '--line-number'
-            ])
-        application = app.BaseApp.BaseApp.lastInstance()
-        self.assertEquals(0, application._logger._errors)
-        self.assertEquals(4, len(application._resultLines))
-        self.assertMatches('test1.txt-1:a', application._resultLines[0])
-        self.assertMatches('test1.txt-2:b', application._resultLines[1])
-        self.assertMatches('test1.txt-4:d', application._resultLines[2])
-        self.assertMatches('test1.txt-5:e', application._resultLines[3])
-
-    def testGrepAfterContext(self):
-        if DEBUG: return
-        fn =  self.tempFile('test1.txt', 'grep')
+    def testGrepBelowContext(self):
+        if DEBUG:
+            return
+        fn = self.tempFile('test1.txt', 'grep')
         base.StringUtils.toFile(fn, 'a\nb\nc\nd\ne\nf\ng')
         app.TextApp.main(['-v3',
-            'grep', r'[abef]', fn, '-A1', '--after-context=1', '--line-number'
-            ])
+                          'grep', r'[abef]', fn, '-B1', '--below-context=1', '--line-number'
+                          ])
         application = app.BaseApp.BaseApp.lastInstance()
         self.assertEquals(0, application._logger._errors)
         self.assertEquals(6, len(application._resultLines))
@@ -234,13 +234,14 @@ B._C.D''')
         self.assertMatches('test1.txt-6:f', application._resultLines[4])
         self.assertMatches('test1.txt-7:g', application._resultLines[5])
 
-    def testGrepBeforeAfterContext(self):
-        if DEBUG: return
-        fn =  self.tempFile('test1.txt', 'grep')
+    def testGrepBelowAboveContext(self):
+        if DEBUG:
+            return
+        fn = self.tempFile('test1.txt', 'grep')
         base.StringUtils.toFile(fn, 'a\nb\nc\nd\ne\nf\ng')
         app.TextApp.main(['-v3',
-            'grep', r'[abf]', fn, '-C1', '--context=1', '--line-number'
-            ])
+                          'grep', r'[abf]', fn, '-C1', '--context=1', '--line-number'
+                          ])
         application = app.BaseApp.BaseApp.lastInstance()
         self.assertEquals(0, application._logger._errors)
         self.assertEquals(6, len(application._resultLines))
@@ -251,15 +252,16 @@ B._C.D''')
         self.assertMatches('test1.txt-6:f', application._resultLines[4])
         self.assertMatches('test1.txt-7:g', application._resultLines[5])
 
-    def testGrepBeforeAfterChars(self):
-        if DEBUG: return
-        fn =  self.tempFile('test1.txt', 'grep')
+    def testGrepAboveBelowChars(self):
+        if DEBUG:
+            return
+        fn = self.tempFile('test1.txt', 'grep')
         base.StringUtils.toFile(fn, '''Version: 12.33
 1.1+2*4.99
 ''')
         app.TextApp.main(['-v3',
-            'grep', r'\d+(\.\d+)?', fn, '-a1', '--after-chars=1', '--line-number', '-b2', '--before-chars=2', '-f%t'
-            ])
+                          'grep', r'\d+(\.\d+)?', fn, '-b1', '--bolow-chars=1', '--line-number', '-a2', '--above-chars=2', '-f%t'
+                          ])
         application = app.BaseApp.BaseApp.lastInstance()
         self.assertEquals(0, application._logger._errors)
         self.assertEquals(4, len(application._resultLines))
@@ -267,6 +269,86 @@ B._C.D''')
         self.assertEquals('1.1+', application._resultLines[1])
         self.assertEquals('1+2*', application._resultLines[2])
         self.assertEquals('2*4.99', application._resultLines[3])
+
+    def testReplace(self):
+        if DEBUG:
+            return
+        fn = self.tempFile('test1.txt', 'replace')
+        base.StringUtils.toFile(fn, '''line 1
+version: 12.33
+bla bla
+''')
+        app.TextApp.main(['-v4',
+                          'replace', r'Version: (\d+\.\d+)', 'V%1', fn, '-i', '-b%', '-B.bak', '--backup=.bak'
+                          ])
+        application = app.BaseApp.BaseApp.lastInstance()
+        self.assertEquals(0, application._logger._errors)
+        self.assertFileContent('''line 1
+V12.33
+bla bla
+''', fn)
+        self.assertFileExists(fn.replace('.txt', '.bak'))
+
+    def testReplaceNotRegexpr(self):
+        if DEBUG:
+            return
+        fn = self.tempFile('test2.txt', 'replace')
+        base.StringUtils.toFile(fn, r'(\d+)')
+        app.TextApp.main(['-v4',
+                          'replace', r'(\d+)', '...', fn, '-R', '--not-regexpr'
+                          ])
+        application = app.BaseApp.BaseApp.lastInstance()
+        self.assertEquals(0, application._logger._errors)
+        self.assertFileContent('...', fn)
+
+    def testReplaceString(self):
+        if DEBUG:
+            return
+        app.TextApp.main(['-v4',
+                          'replace-string', r'(Dirs|Files): (\d+)', '%2 %1', 'dirs: 3 files: 12', '-b%', '--ignore-case'
+                          ])
+        application = app.BaseApp.BaseApp.lastInstance()
+        self.assertEquals(0, application._logger._errors)
+        self.assertEquals('3 dirs 12 files', application._resultText)
+
+    def testReplaceMany(self):
+        if DEBUG: return
+        fn = self.tempFile('test3.txt', 'replace')
+        base.StringUtils.toFile(fn, r'''abc
+a bcabc 11
+ abc 1 a
+''')
+        fnData = self.tempFile('data.txt', 'replace')
+        base.StringUtils.toFile(fnData, '''abc\tY
+1\tXX
+''')
+
+        app.TextApp.main(['-v4',
+                          'replace-many', fnData, fn
+                          ])
+        application = app.BaseApp.BaseApp.lastInstance()
+        self.assertEquals(0, application._logger._errors)
+        self.assertFileContent('''Y
+a bcY XXXX
+ Y XX a
+''', fn)
+
+    def testInsertOrReplace(self):
+        # if DEBUG: return
+        fn = self.tempFile('php.ini', 'replace')
+        base.StringUtils.toFile(fn, r'''#
+max_memory=2048M
+# blub
+''')
+        app.TextApp.main(['-v4',
+                          'insert-or-replace', r'^max_memory=', 'max_memory=1G', fn
+                          ])
+        application = app.BaseApp.BaseApp.lastInstance()
+        self.assertEquals(0, application._logger._errors)
+        self.assertFileContent('''#
+max_memory=1G
+# blub
+''', fn)
 
 if __name__ == '__main__':
     # import sys;sys.argv = ['', 'Test.testName']
