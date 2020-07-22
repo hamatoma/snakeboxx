@@ -23,21 +23,21 @@ class SchedulerTest(UnitTestCase):
         scheduler.insertSlice(sliceInfo, 2, 0.0)
         sliceInfo = base.Scheduler.SliceInfo(taskInfo, scheduler)
         scheduler.insertSlice(sliceInfo, 1, 0.0)
-        self.assertEquals(len(scheduler._slices), 2)
-        self.assertEquals(scheduler._slices[0]._id, 2)
-        self.assertEquals(scheduler._slices[1]._id, 1)
+        self.assertIsEqual(len(scheduler._slices), 2)
+        self.assertIsEqual(scheduler._slices[0]._id, 2)
+        self.assertIsEqual(scheduler._slices[1]._id, 1)
 
         scheduler._slices[0]._nextCall -= 2
         slide1 = scheduler.check()
-        self.assertEquals(slide1._id, 2)
-        self.assertEquals(len(scheduler._slices), 1)
-        self.assertEquals(scheduler._slices[0]._id, 1)
+        self.assertIsEqual(slide1._id, 2)
+        self.assertIsEqual(len(scheduler._slices), 1)
+        self.assertIsEqual(scheduler._slices[0]._id, 1)
 
         scheduler._slices[0]._nextCall -= 3
         self.assertTrue(scheduler.checkAndProcess())
-        self.assertEquals(len(scheduler._slices), 0)
+        self.assertIsEqual(len(scheduler._slices), 0)
 
-        self.assertEquals(taskInfo._count, 1)
+        self.assertIsEqual(taskInfo._count, 1)
 
 if __name__ == '__main__':
     #import sys;sys.argv = ['', 'Test.testName']

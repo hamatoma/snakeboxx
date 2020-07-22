@@ -49,7 +49,7 @@ class MemoryLoggerTest(UnitTestCase):
     def testGetMessages(self):
         logger = base.MemoryLogger.MemoryLogger()
         logger.log('Hi world')
-        self.assertEquals('Hi world', logger.getMessages()[0])
+        self.assertIsEqual('Hi world', logger.getMessages()[0])
 
     def testMatches(self):
         logger = base.MemoryLogger.MemoryLogger()

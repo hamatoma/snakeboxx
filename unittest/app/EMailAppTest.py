@@ -37,7 +37,7 @@ class EMailAppTest(UnitTestCase):
             'testSend', '12345679 123456789 123456789'])
         #    'testSend', 'unittest EMailTest.testSend()'])
         #application = app.BaseApp.BaseApp.lastInstance()
-        #self.assertEquals(self._fn2, email.result())
+        #self.assertIsEqual(self._fn2, email.result())
 
     def testInstall(self):
         if debug: return
@@ -45,7 +45,7 @@ class EMailAppTest(UnitTestCase):
             'install', 'emailboxx'
             ])
         application = app.BaseApp.BaseApp.lastInstance()
-        self.assertEquals(0, application._logger._errors)
+        self.assertIsEqual(0, application._logger._errors)
         self.assertFileContent('''[Unit]
 Description=Offers an email send service.
 After=syslog.target
@@ -90,7 +90,7 @@ job.clean.interval=3600
             'uninstall', '--service=emailboxx'
             ])
         application = app.BaseApp.BaseApp.lastInstance()
-        self.assertEquals(0, application._logger._errors)
+        self.assertIsEqual(0, application._logger._errors)
         self.assertFileNotExists(fnService)
         self.assertFileNotExists(fnApp)
 
@@ -100,8 +100,8 @@ job.clean.interval=3600
             'help', 'help'
             ])
         application = app.BaseApp.BaseApp.lastInstance()
-        self.assertEquals(0, application._logger._errors)
-        self.assertEquals('''emailboxx <global-opts> <mode> [<opts>]
+        self.assertIsEqual(0, application._logger._errors)
+        self.assertIsEqual('''emailboxx <global-opts> <mode> [<opts>]
   Offers email services.
 <mode>:
   help [<pattern-mode> [<pattern-submode>]]
@@ -120,8 +120,8 @@ emailboxx help help sub''', application._resultText)
             'reload', 'emailboxx'
             ])
         application = app.BaseApp.BaseApp.lastInstance()
-        self.assertEquals(1, application._logger._errors)
-        self.assertEquals('reload request was not processed', application._logger._firstErrors[0])
+        self.assertIsEqual(1, application._logger._errors)
+        self.assertIsEqual('reload request was not processed', application._logger._firstErrors[0])
         self.assertFileExists('/tmp/reload.emailboxx.request')
 
     def testDaemon(self):
@@ -132,7 +132,7 @@ emailboxx help help sub''', application._resultText)
             'daemon', 'emailboxx', 'emailboxx'
             ])
         application = app.BaseApp.BaseApp.lastInstance()
-        self.assertEquals(0, application._logger._errors)
+        self.assertIsEqual(0, application._logger._errors)
 
     def testReloadRequest(self):
         if debug: return
@@ -140,8 +140,8 @@ emailboxx help help sub''', application._resultText)
             'reload', 'emailboxx'
             ])
         application = app.BaseApp.BaseApp.lastInstance()
-        self.assertEquals(1, application._logger._errors)
-        self.assertEquals('reload request was not processed', application._logger._firstErrors[0])
+        self.assertIsEqual(1, application._logger._errors)
+        self.assertIsEqual('reload request was not processed', application._logger._firstErrors[0])
 
     def testHandleReloadRequest(self):
         if debug: return
@@ -151,7 +151,7 @@ emailboxx help help sub''', application._resultText)
             'daemon', 'emailboxx', 'emailboxx'
             ])
         application = app.BaseApp.BaseApp.lastInstance()
-        self.assertEquals(0, application._logger._errors)
+        self.assertIsEqual(0, application._logger._errors)
         self.assertFileNotExists(fn)
 
 if __name__ == '__main__':

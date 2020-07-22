@@ -48,7 +48,7 @@ link.x.conf|->tree2/x.conf
         if debug: return
         traverser = base.DirTraverser.DirTraverser(self._base)
         files = ' ' + ' '.join(traverser.asList()).replace(os.sep, '/') + ' '
-        self.assertEquals(files.count(' '), 13+1)
+        self.assertIsEqual(files.count(' '), 13+1)
         self.assertTrue(files.find('data1.txt') >= 0)
         self.assertTrue(files.find('data2.conf') >= 0)
         self.assertTrue(files.find(' tree1 ') >= 0)
@@ -67,7 +67,7 @@ link.x.conf|->tree2/x.conf
         if debug: return
         traverser = base.DirTraverser.DirTraverser(self._base, filePattern="*.txt", dirPattern="*.txt")
         files = ' ' + ' '.join(traverser.asList()).replace(os.sep, '/') + ' '
-        self.assertEquals(files.count(' '), 6+1)
+        self.assertIsEqual(files.count(' '), 6+1)
         self.assertTrue(files.find('data1.txt') >= 0)
         self.assertFalse(files.find('data2.conf') >= 0)
         self.assertFalse(files.find(' tree1 ') >= 0)
@@ -85,7 +85,7 @@ link.x.conf|->tree2/x.conf
         if debug: return
         traverser = base.DirTraverser.DirTraverser(self._base, reDirExcludes='.txt|2', reFileExcludes='.txt|2')
         files = ' ' +  ' '.join(traverser.asList()).replace(os.sep, '/') + ' '
-        self.assertEquals(files.count(' '), 4+1)
+        self.assertIsEqual(files.count(' '), 4+1)
         self.assertTrue(files.find(' tree1 ') >= 0)
         self.assertTrue(files.find('tree1/file1.conf') >= 0)
         self.assertTrue(files.find('tree1/file4.conf') >= 0)
@@ -95,7 +95,7 @@ link.x.conf|->tree2/x.conf
         if debug: return
         traverser = base.DirTraverser.DirTraverser(self._base, fileType='d')
         files = ' ' + ' '.join(traverser.asList()).replace(os.sep, '/') + ' '
-        self.assertEquals(files.count(' '), 4+1)
+        self.assertIsEqual(files.count(' '), 4+1)
         self.assertTrue(files.find(' tree1 ') >= 0)
         self.assertTrue(files.find(' tree2 ') >= 0)
         self.assertTrue(files.find(' tree.txt ') >= 0)
@@ -105,7 +105,7 @@ link.x.conf|->tree2/x.conf
         if debug: return
         traverser = base.DirTraverser.DirTraverser(self._base, fileType='f')
         files = ' ' + ' '.join(traverser.asList()).replace(os.sep, '/') + ' '
-        self.assertEquals(files.count(' '), 7+1)
+        self.assertIsEqual(files.count(' '), 7+1)
         self.assertTrue(files.find('data1.txt') >= 0)
         self.assertTrue(files.find('data2.conf') >= 0)
         self.assertTrue(files.find('tree1/file1.conf') >= 0)
@@ -118,7 +118,7 @@ link.x.conf|->tree2/x.conf
         if debug: return
         traverser = base.DirTraverser.DirTraverser(self._base, fileType='l')
         files = ' ' + ' '.join(traverser.asList()).replace(os.sep, '/') + ' '
-        self.assertEquals(files.count(' '), 2+1)
+        self.assertIsEqual(files.count(' '), 2+1)
         self.assertTrue(files.find('tree2/link.txt') >= 0)
         self.assertTrue(files.find('link.x.conf ') >= 0)
 
@@ -126,7 +126,7 @@ link.x.conf|->tree2/x.conf
         if debug: return
         traverser = base.DirTraverser.DirTraverser(self._base, minDepth=1, maxDepth=1)
         files = ' ' + ' '.join(traverser.asList()).replace(os.sep, '/') + ' '
-        self.assertEquals(files.count(' '), 6+1)
+        self.assertIsEqual(files.count(' '), 6+1)
         self.assertTrue(files.find('tree1/file1.conf') >= 0)
         self.assertTrue(files.find('tree2/file2.txt') >= 0)
         self.assertTrue(files.find('tree2/file3.txt') >= 0)
@@ -138,7 +138,7 @@ link.x.conf|->tree2/x.conf
         if debug: return
         traverser = base.DirTraverser.DirTraverser(self._base, maxYields=4)
         files = ' ' +  ' '.join(traverser.asList()).replace(os.sep, '/') + ' '
-        self.assertEquals(files.count(' '), 4+1)
+        self.assertIsEqual(files.count(' '), 4+1)
         self.assertTrue(files.find('data1.txt') >= 0)
         self.assertTrue(files.find('data2.conf') >= 0)
         self.assertTrue(files.find(' tree1 ') >= 0)
@@ -149,7 +149,7 @@ link.x.conf|->tree2/x.conf
         date = datetime.datetime.strptime('2020-04-05 11:22:34', '%Y-%m-%d %H:%M:%S')
         traverser = base.DirTraverser.DirTraverser(self._base, youngerThan=date)
         files = ' ' +  ' '.join(traverser.asList()).replace(os.sep, '/') + ' '
-        self.assertEquals(files.count(' '), 12+1)
+        self.assertIsEqual(files.count(' '), 12+1)
         self.assertTrue(files.find('data1.txt') >= 0)
         self.assertTrue(files.find('data2.conf') >= 0)
         self.assertTrue(files.find(' tree1 ') >= 0)
@@ -175,7 +175,7 @@ link.x.conf|->tree2/x.conf
         if debug: return
         traverser = base.DirTraverser.DirTraverser(self._base, minSize=6, fileType='f')
         files = ' ' +  ' '.join(traverser.asList()).replace(os.sep, '/')
-        self.assertEquals(files.count(' '), 2+1)
+        self.assertIsEqual(files.count(' '), 2+1)
         self.assertTrue(files.find('tree2/file3.txt') >= 0)
         self.assertTrue(files.find('tree1/file4.conf') >= 0)
 
@@ -183,7 +183,7 @@ link.x.conf|->tree2/x.conf
         if debug: return
         traverser = base.DirTraverser.DirTraverser(self._base, maxSize=5, fileType='f')
         files = ' ' +  ' '.join(traverser.asList()).replace(os.sep, '/') + ' '
-        self.assertEquals(files.count(' '), 4+1)
+        self.assertIsEqual(files.count(' '), 4+1)
         self.assertTrue(files.find('data1.txt') >= 0)
         self.assertTrue(files.find('data2.conf') >= 0)
         self.assertTrue(files.find('tree2/file2.txt') >= 0)

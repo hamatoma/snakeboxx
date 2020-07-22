@@ -39,7 +39,7 @@ logger={}
             'install', 'osboxx'
             ])
         application = app.BaseApp.BaseApp.lastInstance()
-        self.assertEquals(0, application._logger._errors)
+        self.assertIsEqual(0, application._logger._errors)
         fn = self._configDir + os.sep + 'dir.conf'
         self.assertFileExists(fn)
         self.assertFileContent('''# created by DirApp
@@ -55,7 +55,7 @@ logfile=/var/log/local/dirboxx.log
             'uninstall', '--service=dirboxx'
             ])
         email = app.BaseApp.BaseApp.lastInstance()
-        self.assertEquals(0, email._logger._errors)
+        self.assertIsEqual(0, email._logger._errors)
         self.assertFileNotExists(fnApp)
 
     def testHelp(self):
@@ -64,8 +64,8 @@ logfile=/var/log/local/dirboxx.log
             'help', 'help'
             ])
         application = app.BaseApp.BaseApp.lastInstance()
-        self.assertEquals(0, application._logger._errors)
-        self.assertEquals('''dirboxx <global-opts> <mode> [<options>]
+        self.assertIsEqual(0, application._logger._errors)
+        self.assertIsEqual('''dirboxx <global-opts> <mode> [<options>]
   Searching and modifying in text files.
 <mode>:
   help [<pattern-mode> [<pattern-submode>]]
@@ -94,8 +94,8 @@ dir1/file8.txt||664|2020-02-29 02:44:32
             'extrema', 'all', '--count=3', '--min-length=1', '--file-type=f', self._baseDir
             ])
         application = app.BaseApp.BaseApp.lastInstance()
-        self.assertEquals(0, application._logger._errors)
-        self.assertEquals('''dir(s): 3 file(s): 8 / 82 Byte
+        self.assertIsEqual(0, application._logger._errors)
+        self.assertIsEqual('''dir(s): 3 file(s): 8 / 82 Byte
 ignored: dir(s): 0 file(s): 0
 == the oldest files:
 2020.01.20 02:44:32       7 Byte /tmp/unittest.dir/src/dir2/file4.txt
@@ -125,9 +125,9 @@ ignored: dir(s): 0 file(s): 0
             'extrema', 
             ])
         application = app.BaseApp.BaseApp.lastInstance()
-        self.assertEquals(0, application._logger._errors)
+        self.assertIsEqual(0, application._logger._errors)
         current = '\n'.join(application._resultLines)
-        self.assertEquals('''dir(s): 1 file(s): 1 / 22 Byte
+        self.assertIsEqual('''dir(s): 1 file(s): 1 / 22 Byte
 ignored: dir(s): 0 file(s): 0
 == the oldest files:
 2020.01.22 02:44:32      22 Byte file1.txt
@@ -151,9 +151,9 @@ dir1/file2.dat|this is in file 123456xxxxxxxxx|664|2019-01-22 12:04:39
             'list', 
             ])
         application = app.BaseApp.BaseApp.lastInstance()
-        self.assertEquals(0, application._logger._errors)
+        self.assertIsEqual(0, application._logger._errors)
         current = '\n'.join(application._resultLines)
-        self.assertEquals('''2020.02.29 04:24:32        <dir> dir1
+        self.assertIsEqual('''2020.02.29 04:24:32        <dir> dir1
 2020.01.22 02:44:32      22 Byte file1.txt
 2019.01.22 12:04:39      31 Byte dir1/file2.dat
 dir(s): 2 file(s): 2 / 53 Byte
@@ -174,14 +174,12 @@ dir1/file3.txt|123|664|2020-01-22 12:04:39
             '--max-size=5', '--younger-than=2020.01.01-05:00:00'
             ])
         application = app.BaseApp.BaseApp.lastInstance()
-        self.assertEquals(0, application._logger._errors)
+        self.assertIsEqual(0, application._logger._errors)
         current = '\n'.join(application._resultLines)
-        self.assertEquals('''2020.01.22 12:04:39      31 Byte dir1/file2.txt
-2020.01.22 12:04:39       3 Byte dir1/file3.txt
-2020.07.22 00:41:32 dir(s): 2 file(s): 2 / 34 Byte
-ignored: dir(s): 0 file(s): 2
+        self.assertIsEqual('''2020.01.22 12:04:39       3 Byte dir1/file3.txt
+dir(s): 2 file(s): 1 / 3 Byte
+ignored: dir(s): 1 file(s): 2
 ''', current)
-
 
 if __name__ == '__main__':
     # import sys;sys.argv = ['', 'Test.testName']

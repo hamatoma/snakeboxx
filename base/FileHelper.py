@@ -939,6 +939,9 @@ def listFile(statInfo, full, orderDateSize=True, humanReadable=True):
         full = full[2:]
     if stat.S_ISDIR(statInfo.st_mode):
         size = '<dir>'
+    elif stat.S_ISLNK(statInfo.st_mode):
+        size = '<link>'
+        full += ' -> ' + os.readlink(full)
     elif humanReadable:
         size = "{:>8s}".format(base.StringUtils.formatSize(statInfo.st_size))
     else:

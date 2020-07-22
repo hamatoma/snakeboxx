@@ -13,7 +13,7 @@ class LinuxUtilsTest(UnitTestCase):
         self.assertTrue(len(infos) >= 1)
         for info in infos:
             if info[0] not in ['/', '/opt', '/work', '/home'] and not info[0].startswith('/media') and info[0].find('jail') < 0:
-                self.assertEquals('valid path', info[0])
+                self.assertIsEqual('valid path', info[0])
             self.assertTrue(type(info[1]) == int)
             self.assertTrue(type(info[2]) == int)
             self.assertTrue(type(info[3]) == int)
@@ -30,7 +30,7 @@ class LinuxUtilsTest(UnitTestCase):
 
     def testLoad(self):
         info = base.LinuxUtils.load()
-        self.assertEquals(5, len(info))
+        self.assertIsEqual(5, len(info))
         for ix in range(3):
             self.assertTrue(type(info[ix]) == float)
         self.assertTrue(type(info[3]) == int)
@@ -39,7 +39,7 @@ class LinuxUtilsTest(UnitTestCase):
 
     def testMemoryInfo(self):
         info = base.LinuxUtils.memoryInfo()
-        self.assertEquals(5, len(info))
+        self.assertIsEqual(5, len(info))
         # TOTAL_RAM, AVAILABLE_RAM, TOTAL_SWAP, FREE_SWAP, BUFFERS
         for ix in range(len(info)):
             self.assertTrue(type(info[ix]) == int)
@@ -48,11 +48,11 @@ class LinuxUtilsTest(UnitTestCase):
         self.assertTrue(info[2] >= info[3])
 
     def checkMdadm(self, name, aType, members, blocks, status, info):
-        self.assertEquals(name, info[0])
-        self.assertEquals(aType, info[1])
-        self.assertEquals(members, info[2])
-        self.assertEquals(blocks, info[3])
-        self.assertEquals(status, info[4])
+        self.assertIsEqual(name, info[0])
+        self.assertIsEqual(aType, info[1])
+        self.assertIsEqual(members, info[2])
+        self.assertIsEqual(blocks, info[3])
+        self.assertIsEqual(status, info[4])
 
     def testMdadmInfo(self):
         fn = self.tempFile('mdadm.info')
@@ -70,7 +70,7 @@ md0 : active raid1 sda1[0] sdb1[1]
       242496 blocks super 1.2 [2/2] [UU]
 ''')
         infos = base.LinuxUtils.mdadmInfo(fn)
-        self.assertEquals(3, len(infos))
+        self.assertIsEqual(3, len(infos))
         self.checkMdadm('md2', 'raid1', 'sdc1[0] sdd1[1]', 1953378368, 'OK', infos[0])
         self.checkMdadm('md1', 'raid1', 'sda2[0] sdb2[1]', 508523520, 'OK', infos[1])
         self.checkMdadm('md0', 'raid1', 'sda1[0] sdb1[1]', 242496, 'OK', infos[2])
@@ -82,28 +82,28 @@ md0 : active raid1 sda1[0] sdb1[1]
 md1 : active raid1 hda14[0] sda11[2](F)
       2803200 blocks [2/1] [U_]''')
         infos = base.LinuxUtils.mdadmInfo(fn)
-        self.assertEquals(1, len(infos))
+        self.assertIsEqual(1, len(infos))
         self.checkMdadm('md1', 'raid1', 'hda14[0] sda11[2](F)', 2803200, 'broken', infos[0])
 
     def testStress(self):
         info = base.LinuxUtils.stress(r'^(sda|nvme0n1)$', r'^(enp2s0|wlp4s0)$')
-        self.assertEquals(7, len(info))
+        self.assertIsEqual(7, len(info))
 
     def testUserId(self):
-        self.assertEquals(base.LinuxUtils.userId('root'), 0)
-        self.assertEquals(base.LinuxUtils.userId('www-data'), 33)
-        self.assertEquals(base.LinuxUtils.userId(99), 99)
-        self.assertEquals(base.LinuxUtils.userId('98'), 98)
+        self.assertIsEqual(base.LinuxUtils.userId('root'), 0)
+        self.assertIsEqual(base.LinuxUtils.userId('www-data'), 33)
+        self.assertIsEqual(base.LinuxUtils.userId(99), 99)
+        self.assertIsEqual(base.LinuxUtils.userId('98'), 98)
         self.assertNone(base.LinuxUtils.userId('bluberablub'))
-        self.assertEquals(base.LinuxUtils.userId('NobodyKnows', -1), -1)
+        self.assertIsEqual(base.LinuxUtils.userId('NobodyKnows', -1), -1)
 
     def testGroupId(self):
-        self.assertEquals(base.LinuxUtils.groupId('root'), 0)
-        self.assertEquals(base.LinuxUtils.groupId('www-data'), 33)
-        self.assertEquals(base.LinuxUtils.groupId(99), 99)
-        self.assertEquals(base.LinuxUtils.groupId('98'), 98)
+        self.assertIsEqual(base.LinuxUtils.groupId('root'), 0)
+        self.assertIsEqual(base.LinuxUtils.groupId('www-data'), 33)
+        self.assertIsEqual(base.LinuxUtils.groupId(99), 99)
+        self.assertIsEqual(base.LinuxUtils.groupId('98'), 98)
         self.assertNone(base.LinuxUtils.groupId('bluberablub'))
-        self.assertEquals(base.LinuxUtils.groupId('NobodyKnows', -1), -1)
+        self.assertIsEqual(base.LinuxUtils.groupId('NobodyKnows', -1), -1)
 
 if __name__ == '__main__':
     #import sys;sys.argv = ['', 'Test.testName']

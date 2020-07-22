@@ -20,7 +20,7 @@ class UsageInfoTest(UnitTestCase):
   <pattern>: only matching modes will be displayed
  ''', 'APP-NAME help')
         current = info.asString('help', 1)
-        self.assertEquals('''example <mode>
+        self.assertIsEqual('''example <mode>
   displays this example
 <mode>:
     help <pattern>

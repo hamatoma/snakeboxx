@@ -22,8 +22,8 @@ class LoggerTest(UnitTestCase):
         self.assertFileContains('Hi world', logFile)
         self.assertFileContains('+++ an expected error', logFile)
         self.assertFileContains('debug message', logFile)
-        self.assertEquals('an expected error', logger._firstErrors[0])
-        self.assertEquals(1, logger._errors)
+        self.assertIsEqual('an expected error', logger._firstErrors[0])
+        self.assertIsEqual(1, logger._errors)
 
     def testTextFilter(self):
         logFile = '/tmp/logger.log'
@@ -39,8 +39,8 @@ class LoggerTest(UnitTestCase):
         self.assertFileContains('+++ an expected error', logFile)
         self.assertFileNotContains('a [second] expected error', logFile)
         self.assertFileContains('debug message', logFile)
-        self.assertEquals('an expected error', logger._firstErrors[0])
-        self.assertEquals(1, logger._errors)
+        self.assertIsEqual('an expected error', logger._firstErrors[0])
+        self.assertIsEqual(1, logger._errors)
 
     def testRegExprFilter(self):
         logFile = '/tmp/logger.log'
@@ -56,8 +56,8 @@ class LoggerTest(UnitTestCase):
         self.assertFileContains('+++ an expected error', logFile)
         self.assertFileNotContains('a [second] expected error', logFile)
         self.assertFileContains('debug message', logFile)
-        self.assertEquals('an expected error', logger._firstErrors[0])
-        self.assertEquals(1, logger._errors)
+        self.assertIsEqual('an expected error', logger._firstErrors[0])
+        self.assertIsEqual(1, logger._errors)
 
     def testMirror(self):
         logFile1 = '/tmp/logger1.log'
@@ -77,14 +77,14 @@ class LoggerTest(UnitTestCase):
         self.assertFileContains('Hi world', logFile1)
         self.assertFileContains('+++ an expected error', logFile1)
         self.assertFileContains('debug message', logFile1)
-        self.assertEquals('an expected error', logger._firstErrors[0])
-        self.assertEquals(1, logger._errors)
+        self.assertIsEqual('an expected error', logger._firstErrors[0])
+        self.assertIsEqual(1, logger._errors)
 
         self.assertFileContains('Hi world', logFile2)
         self.assertFileContains('+++ an expected error', logFile2)
         self.assertFileContains('debug message', logFile2)
-        self.assertEquals('an expected error', loggerMirror._firstErrors[0])
-        self.assertEquals(1, loggerMirror._errors)
+        self.assertIsEqual('an expected error', loggerMirror._firstErrors[0])
+        self.assertIsEqual(1, loggerMirror._errors)
 
 if __name__ == '__main__':
     #import sys;sys.argv = ['', 'Test.testName']

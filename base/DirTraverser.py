@@ -43,14 +43,14 @@ class DirTraverser:
         '''
         self._directory = directory if directory != '' else '.'
         # +1: the preceeding slash
-        self._lengthDirectory = len(self._directory) + 1
+        self._lengthDirectory = 0 if directory == os.sep else len(self._directory) + 1
         if fileType is None:
             fileType = 'dfl'
         self._findFiles = fileType.find('f') >= 0
         self._findDirs = fileType.find('d') >= 0
         self._findLinks = fileType.find('l') >= 0
         self._filePattern = filePattern
-        self._dirPattern = '*' if dirPattern is None else dirPattern
+        self._dirPattern = dirPattern
         self._reDirExcludes = reDirExcludes
         self._reDirExcludes = None if reDirExcludes is None else (
             re.compile(reDirExcludes, base.Const.IGNORE_CASE) if isinstance(reDirExcludes, str) else
@@ -90,6 +90,7 @@ class DirTraverser:
         self._egid = os.getegid()
         self._statInfo = None
         self._node = None
+        self._isDir = False
 
     def asList(self):
         '''Returns a list of all found files (filenames with relative path).
@@ -110,8 +111,9 @@ class DirTraverser:
         '''
         self._countDirs += 1
         dirs = []
+        directory2 = '' if directory == os.sep else directory
         for node in os.listdir(directory):
-            full = directory + os.sep + node
+            full = directory2 + os.sep + node
             self._statInfo = statInfo = os.lstat(full)
             self._isDir = stat.S_ISDIR(statInfo.st_mode)
             if self._isDir:
@@ -126,7 +128,10 @@ class DirTraverser:
                     dirs.append(node)
                 if depth < self._minDepth:
                     continue
-                self._ignoredDirs -= 1
+                if depth < self._maxDepth:
+                    self._ignoredDirs -= 1
+                if self._dirPattern == None:
+                    continue
                 if not self._findDirs:
                     continue
                 if self._dirPattern == '*' or fnmatch.fnmatch(node, self._dirPattern):
@@ -174,7 +179,7 @@ class DirTraverser:
                 if self._yields >= self._maxYields:
                     return
         for node in dirs:
-            full = directory + os.sep + node
+            full = directory2 + os.sep + node
             yield from self.next(full, depth + 1)
 
     def summary(self):
@@ -260,7 +265,7 @@ def fromOptions(pattern, options, errors):
             toDelete.append(ix)
             continue
         sizeValue = base.StringUtils.sizeOption('max-size', 's', option, errors)
-        if intValue is not None:
+        if sizeValue is not None:
             maxSize = sizeValue
             toDelete.append(ix)
             continue

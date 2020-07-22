@@ -25,8 +25,8 @@ class CryptoEngineTest(UnitTestCase):
         encoded = engine.encode(text, 'word')
         self.log('=' + encoded)
         decoded = engine.decode(encoded, 'word')
-        self.assertEquals(text, decoded)
-        self.assertEquals(0, len(logger.getMessages()))
+        self.assertIsEqual(text, decoded)
+        self.assertIsEqual(0, len(logger.getMessages()))
 
     def testDecode(self):
         logger = base.MemoryLogger.MemoryLogger()
@@ -35,14 +35,14 @@ class CryptoEngineTest(UnitTestCase):
             text = engine.nextString(20, aSet)
             encoded = engine.encode(text, aSet)
             decoded = engine.decode(encoded, aSet)
-            self.assertEquals(text, decoded)
-            self.assertEquals(0, len(logger.getMessages()))
+            self.assertIsEqual(text, decoded)
+            self.assertIsEqual(0, len(logger.getMessages()))
         for aSet in engine.getCharSetNames():
             text = engine.getCharSet(aSet)
             encoded = engine.encode(text, aSet)
             decoded = engine.decode(encoded, aSet)
-            self.assertEquals(text, decoded)
-            self.assertEquals(0, len(logger.getMessages()))
+            self.assertIsEqual(text, decoded)
+            self.assertIsEqual(0, len(logger.getMessages()))
 
     def buildBinary(self, length):
         logger = base.MemoryLogger.MemoryLogger()
@@ -61,15 +61,15 @@ class CryptoEngineTest(UnitTestCase):
         text = '12'
         encoded = engine.encodeBinary(text)
         decoded = engine.decodeBinary(encoded)
-        self.assertEquals(text, decoded)
+        self.assertIsEqual(text, decoded)
         text = '123'
         encoded = engine.encodeBinary(text)
         decoded = engine.decodeBinary(encoded)
-        self.assertEquals(text, decoded)
+        self.assertIsEqual(text, decoded)
         text = '1235'
         encoded = engine.encodeBinary(text)
         decoded = engine.decodeBinary(encoded)
-        self.assertEquals(text, decoded)
+        self.assertIsEqual(text, decoded)
 
     def testEncodeBinary(self):
         if debug:
@@ -84,19 +84,19 @@ class CryptoEngineTest(UnitTestCase):
                 try:
                     decoded = engine.decodeBinary(encoded)
                 except Exception as exc:
-                    self.assertEquals('', str(exc))
+                    self.assertIsEqual('', str(exc))
                     break
-                self.assertEquals(text, decoded)
-                self.assertEquals(0, len(logger.getMessages()))
+                self.assertIsEqual(text, decoded)
+                self.assertIsEqual(0, len(logger.getMessages()))
 
     def testTestCharSet(self):
         logger = base.MemoryLogger.MemoryLogger()
         engine = base.CryptoEngine.CryptoEngine(logger)
         for name in engine.getCharSetNames():
             aSet = engine.getCharSet(name)
-            self.assertEquals(-1, engine.testCharSet(aSet, name))
+            self.assertIsEqual(-1, engine.testCharSet(aSet, name))
             aSet += "\t"
-            self.assertEquals(len(aSet) - 1, engine.testCharSet(aSet, name))
+            self.assertIsEqual(len(aSet) - 1, engine.testCharSet(aSet, name))
 
     def testOneTimePad(self):
         logger = base.MemoryLogger.MemoryLogger()
@@ -107,8 +107,8 @@ class CryptoEngineTest(UnitTestCase):
                 data = 'X{:04x}y'.format(user)
                 pad = engine.oneTimePad(user, data)
                 padData = engine.unpackOneTimePad(pad)
-                self.assertEquals(user, padData[1])
-                self.assertEquals(data, padData[2])
+                self.assertIsEqual(user, padData[1])
+                self.assertIsEqual(data, padData[2])
                 fp.write('{:d}\t{:s}\t{:s}'.format(user, data, pad))
 
     def testExternOneTimePad(self):
@@ -122,8 +122,8 @@ class CryptoEngineTest(UnitTestCase):
                 for line in fp:
                     [user, data, pad] = line.rstrip().split("\t")
                     padData = engine.unpackOneTimePad(pad, 3600)
-                    self.assertEquals(int(user), padData[1])
-                    self.assertEquals(data, padData[2])
+                    self.assertIsEqual(int(user), padData[1])
+                    self.assertIsEqual(data, padData[2])
 
     def testSetSeedFromString(self):
         if debug:
@@ -131,11 +131,11 @@ class CryptoEngineTest(UnitTestCase):
         logger = base.MemoryLogger.MemoryLogger()
         engine = base.CryptoEngine.CryptoEngine(logger)
         engine.setSeedFromString('')
-        self.assertEquals(231702727, engine.nextInt())
+        self.assertIsEqual(231702727, engine.nextInt())
         engine.setSeedFromString('x')
-        self.assertEquals(1157398379, engine.nextInt())
+        self.assertIsEqual(1157398379, engine.nextInt())
         engine.setSeedFromString('blubber')
-        self.assertEquals(604275342, engine.nextInt())
+        self.assertIsEqual(604275342, engine.nextInt())
 
     def testSaveRestore(self):
         if debug:
@@ -147,7 +147,7 @@ class CryptoEngineTest(UnitTestCase):
         value1 = engine.nextString(10, 'ascii94')
         engine.restoreSeed(seed1)
         value2 = engine.nextString(10, 'ascii94')
-        self.assertEquals(value1, value2)
+        self.assertIsEqual(value1, value2)
 
     def testBase64(self):
         if False and debug:

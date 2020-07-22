@@ -35,14 +35,14 @@ class HttpClientTest(UnitTestCase):
         client = net.HttpClient.HttpClient(logger, 2)
         client.getHead('https://wiki.hamatoma.de', 3)
         item = client.getHeaderField('content-type')
-        self.assertEquals('text/html; charset=UTF-8', item)
+        self.assertIsEqual('text/html; charset=UTF-8', item)
 
     def testPutSimpleRest(self):
         if DEBUG: return
         logger = base.MemoryLogger.MemoryLogger(1)
         client = net.HttpClient.HttpClient(logger, 2)
         client.putSimpleRest('https://wiki.hamatoma.de', 'test', 'data', { 'a': 'b'})
-        self.assertEquals(client._response.status, 405)
+        self.assertIsEqual(client._response.status, 405)
 
 if __name__ == '__main__':
     #import sys;sys.argv = ['', 'Test.testName']

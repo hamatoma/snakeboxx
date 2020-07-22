@@ -32,12 +32,12 @@ class FileHelperTest(UnitTestCase):
         shutil.rmtree(self.tempDir(self._baseNode))
 
     def checkPart(self, container, full, path, node, fn, ext):
-        self.assertEquals(path, container['path'])
-        self.assertEquals(full, container['full'])
-        self.assertEquals(node, container['node'])
-        self.assertEquals(fn, container['fn'])
-        self.assertEquals(ext, container['ext'])
-        self.assertEquals(full, base.FileHelper.joinFilename(container))
+        self.assertIsEqual(path, container['path'])
+        self.assertIsEqual(full, container['full'])
+        self.assertIsEqual(node, container['node'])
+        self.assertIsEqual(fn, container['fn'])
+        self.assertIsEqual(ext, container['ext'])
+        self.assertIsEqual(full, base.FileHelper.joinFilename(container))
 
     def testSplitFilenameJoinFilename(self):
         if DEBUG: return
@@ -53,15 +53,15 @@ class FileHelperTest(UnitTestCase):
     def testTail(self):
         if DEBUG: return
         tail = base.FileHelper.tail(self._fn)
-        self.assertEquals(1, len(tail))
-        self.assertEquals('This file is in line 3', tail[0])
+        self.assertIsEqual(1, len(tail))
+        self.assertIsEqual('This file is in line 3', tail[0])
 
     def testTailNumbers(self):
         if DEBUG: return
         tail = base.FileHelper.tail(self._fn, 2, True)
-        self.assertEquals(2, len(tail))
+        self.assertIsEqual(2, len(tail))
         asString = ''.join(tail)
-        self.assertEquals('2: line 2\n3: This file is in line 3', asString)
+        self.assertIsEqual('2: line 2\n3: This file is in line 3', asString)
 
     def testDirectoryInfo(self):
         if DEBUG: return
@@ -71,12 +71,12 @@ class FileHelperTest(UnitTestCase):
         self.assertTrue(info._dirCount > 0)
         self.assertTrue(info._ignoredDirs > 0)
         # self.assertTrue(info._ignoredFiles > 0)
-        self.assertEquals(5, len(info._youngest))
-        self.assertEquals(5, len(info._largest))
+        self.assertIsEqual(5, len(info._youngest))
+        self.assertIsEqual(5, len(info._largest))
 
     def testPathToNode(self):
         if DEBUG: return
-        self.assertEquals('x__abc_def_x.txt', base.FileHelper.pathToNode('x:/abc/def/x.txt'))
+        self.assertIsEqual('x__abc_def_x.txt', base.FileHelper.pathToNode('x:/abc/def/x.txt'))
 
     def testSetModified(self):
         if DEBUG: return
@@ -86,9 +86,9 @@ class FileHelperTest(UnitTestCase):
         januar = datetime.datetime(2016, 1, 2, 10, 22, 55)
         januar2 = time.mktime(januar.timetuple())
         base.FileHelper.setModified(fn, yesterday)
-        self.assertEquals(yesterday, int(os.path.getmtime(fn)))
+        self.assertIsEqual(yesterday, int(os.path.getmtime(fn)))
         base.FileHelper.setModified(fn, None, januar)
-        self.assertEquals(januar2, os.path.getmtime(fn))
+        self.assertIsEqual(januar2, os.path.getmtime(fn))
 
     def testDistinctPaths(self):
         if DEBUG: return
@@ -134,10 +134,10 @@ class FileHelperTest(UnitTestCase):
 
     def testFromBytes(self):
         if DEBUG: return
-        self.assertEquals('ascii', base.FileHelper.fromBytes(b'ascii'))
-        self.assertEquals('äöüÖÄÜß', base.FileHelper.fromBytes('äöüÖÄÜß'.encode('utf_8')))
+        self.assertIsEqual('ascii', base.FileHelper.fromBytes(b'ascii'))
+        self.assertIsEqual('äöüÖÄÜß', base.FileHelper.fromBytes('äöüÖÄÜß'.encode('utf_8')))
         line = 'äöüÖÄÜß'.encode('latin-1')
-        self.assertEquals('äöüÖÄÜß', base.FileHelper.fromBytes(line))
+        self.assertIsEqual('äöüÖÄÜß', base.FileHelper.fromBytes(line))
         line = 'äöüÖÄÜß'.encode('cp850')
         self.assertFalse('äöüÖÄÜß' == base.FileHelper.fromBytes(line))
         line = b''
@@ -217,18 +217,18 @@ class FileHelperTest(UnitTestCase):
         self.tempDir('sibling', self._baseNode)
         base.FileHelper.ensureSymbolicLink('../../sibling', target)
         self.assertTrue(os.path.islink(target))
-        self.assertEquals('../../sibling', os.readlink(target))
+        self.assertIsEqual('../../sibling', os.readlink(target))
         # changing link source:
         self.tempDir('sibling2', self._baseNode)
         base.FileHelper.ensureSymbolicLink('../../sibling2', target, True)
         self.assertTrue(os.path.islink(target))
-        self.assertEquals('../../sibling2', os.readlink(target))
+        self.assertIsEqual('../../sibling2', os.readlink(target))
         # removing existing target:
         self.ensureFileDoesNotExist(target)
         base.StringUtils.toFile(target, 'anything')
         base.FileHelper.ensureSymbolicLink('../../sibling2', target, True)
         self.assertTrue(os.path.islink(target))
-        self.assertEquals('../../sibling2', os.readlink(target))
+        self.assertIsEqual('../../sibling2', os.readlink(target))
 
     def testEnsureSymbolicLinkErrors(self):
         if DEBUG: return
@@ -251,26 +251,26 @@ class FileHelperTest(UnitTestCase):
         if DEBUG: return
         baseDir = '/usr/share/pyrshell/unittest/data/'
         aClass, subClass = base.FileHelper.fileClass(baseDir + 'example.zip')
-        self.assertEquals('container', aClass)
-        self.assertEquals('zip', subClass)
+        self.assertIsEqual('container', aClass)
+        self.assertIsEqual('zip', subClass)
         aClass, subClass = base.FileHelper.fileClass(baseDir + 'example.tar')
-        self.assertEquals('container', aClass)
-        self.assertEquals('tar', subClass)
+        self.assertIsEqual('container', aClass)
+        self.assertIsEqual('tar', subClass)
         aClass, subClass = base.FileHelper.fileClass(baseDir + 'example.tgz')
-        self.assertEquals('container', aClass)
-        self.assertEquals('tar', subClass)
+        self.assertIsEqual('container', aClass)
+        self.assertIsEqual('tar', subClass)
         aClass, subClass = base.FileHelper.fileClass(baseDir + 'example.tbz')
-        self.assertEquals('container', aClass)
-        self.assertEquals('tar', subClass)
+        self.assertIsEqual('container', aClass)
+        self.assertIsEqual('tar', subClass)
         aClass, subClass = base.FileHelper.fileClass(baseDir + 'example.html')
-        self.assertEquals('text', aClass)
-        self.assertEquals('xml', subClass)
+        self.assertIsEqual('text', aClass)
+        self.assertIsEqual('xml', subClass)
         aClass, subClass = base.FileHelper.fileClass(baseDir + 'example.sh')
-        self.assertEquals('text', aClass)
-        self.assertEquals('shell', subClass)
+        self.assertIsEqual('text', aClass)
+        self.assertIsEqual('shell', subClass)
         aClass, subClass = base.FileHelper.fileClass(baseDir + 'example.txt')
-        self.assertEquals('text', aClass)
-        self.assertEquals('text', subClass)
+        self.assertIsEqual('text', aClass)
+        self.assertIsEqual('text', subClass)
 
     def testEnsureFileExists(self):
         if DEBUG: return
@@ -305,7 +305,7 @@ class FileHelperTest(UnitTestCase):
         self.assertTrue(os.path.islink(trg2))
         fn = target + os.sep + 'hi.link.txt'
         self.assertFileExists(fn)
-        self.assertEquals('hi.txt', os.readlink(fn))
+        self.assertIsEqual('hi.txt', os.readlink(fn))
 
     def testCopyDirectoryUpdate(self):
         if DEBUG: return
@@ -348,8 +348,8 @@ class FileHelperTest(UnitTestCase):
         if DEBUG: return
         fn = base.FileHelper.tempFile('test.txt', 'unittest.2')
         parent = os.path.dirname(fn)
-        self.assertEquals('test.txt', os.path.basename(fn))
-        self.assertEquals('unittest.2', os.path.basename(parent))
+        self.assertIsEqual('test.txt', os.path.basename(fn))
+        self.assertIsEqual('unittest.2', os.path.basename(parent))
         self.assertFileExists(parent)
         os.rmdir(parent)
 
@@ -370,29 +370,29 @@ link|->tree1
         self.assertFileExists(fn)
         statInfo = os.stat(fn)
         self.assertNotNone(statInfo)
-        self.assertEquals('blaBla', base.StringUtils.fromFile(fn))
-        self.assertEquals(0o660, statInfo.st_mode % 0o1000)
+        self.assertIsEqual('blaBla', base.StringUtils.fromFile(fn))
+        self.assertIsEqual(0o660, statInfo.st_mode % 0o1000)
         current = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(statInfo.st_mtime))
-        self.assertEquals('2020-04-05 11:22:33', current)
+        self.assertIsEqual('2020-04-05 11:22:33', current)
         self.assertFileExists(dirName + os.sep + 'file4')
         dirName = self._baseDir + os.sep + 'tree2'
         self.assertDirExists(dirName)
         statInfo = os.lstat(dirName)
-        self.assertEquals(0o744, statInfo.st_mode % 0o1000)
+        self.assertIsEqual(0o744, statInfo.st_mode % 0o1000)
         current = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(statInfo.st_mtime))
         self._logger.log('== time test for dirs deactivated')
-        #self.assertEquals('2020-04-06 12:23:34', current)
+        #self.assertIsEqual('2020-04-06 12:23:34', current)
         self.assertFileExists(dirName + os.sep + 'file2')
         fn = dirName + os.sep + 'file3'
         self.assertFileExists(dirName + os.sep + 'file3')
         statInfo = os.stat(fn)
         self.assertNotNone(statInfo)
-        self.assertEquals(0o700, statInfo.st_mode % 0o1000)
-        self.assertEquals('1234', base.StringUtils.fromFile(fn))
+        self.assertIsEqual(0o700, statInfo.st_mode % 0o1000)
+        self.assertIsEqual('1234', base.StringUtils.fromFile(fn))
         fn = self._baseDir + os.sep + 'link'
         self.assertFileExists(fn)
         self.assertTrue(os.path.islink(fn))
-        self.assertEquals('tree1', os.readlink(fn))
+        self.assertIsEqual('tree1', os.readlink(fn))
 
     def testCopyByRules(self):
         if DEBUG: return
@@ -456,7 +456,7 @@ public/js:*:recursive
         link2 = self._baseDir + os.sep + 'link2'
         base.FileHelper.ensureFileDoesNotExist(link2)
         os.symlink('end.txt', link2)
-        self.assertEquals(end, base.FileHelper.endOfLinkChain(link1))
+        self.assertIsEqual(end, base.FileHelper.endOfLinkChain(link1))
         base.FileHelper.ensureFileDoesNotExist(end)
         self.assertNone(base.FileHelper.endOfLinkChain(link1))
 
@@ -561,8 +561,8 @@ public/js:*:recursive
 
     def testReplaceExtension(self):
         #if DEBUG: return
-        self.assertEquals('/abc/def.abc', base.FileHelper.replaceExtension('/abc/def.txt', '.abc'))
-        self.assertEquals('/abc/.def.abc', base.FileHelper.replaceExtension('/abc/.def', '.abc'))
+        self.assertIsEqual('/abc/def.abc', base.FileHelper.replaceExtension('/abc/def.txt', '.abc'))
+        self.assertIsEqual('/abc/.def.abc', base.FileHelper.replaceExtension('/abc/.def', '.abc'))
 
 if __name__ == '__main__':
     sys.argv = ['', 'Test.testName']

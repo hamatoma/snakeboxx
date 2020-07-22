@@ -75,7 +75,7 @@ class UnitTestCase:
             rc = self.error('file {} exists but it is not a directory'.format(current))
         return rc
 
-    def assertEquals(self, expected, current):
+    def assertIsEqual(self, expected, current):
         '''Tests whether two values are equal.
         @param expected: the expected value
         @param current: the value to test
@@ -137,7 +137,7 @@ class UnitTestCase:
         else:
             with open(full, 'r') as fp:
                 current = fp.read()
-            rc = self.assertEquals(expectedContent, current)
+            rc = self.assertIsEqual(expectedContent, current)
             if not rc:
                 tempFile = self.tempFile(os.path.basename(currentFile))
                 with open(tempFile, "w") as fp:
@@ -393,9 +393,9 @@ class UnitTestCase:
         self.assertFalse(True)
 
     def xtestMyself(self):
-        self.assertEquals(3, 4)
-        self.assertEquals('Hello', 'Hallo')
-        self.assertEquals('abc\nhallo', 'abc\nhello')
+        self.assertIsEqual(3, 4)
+        self.assertIsEqual('Hello', 'Hallo')
+        self.assertIsEqual('abc\nhallo', 'abc\nhello')
         self.assertNone('not none')
         self.assertNotNone(None)
 

@@ -33,7 +33,7 @@ class EMailTest(UnitTestCase):
 
         email.sendTo('wk64@gmx.de', None, None, logger)
         signature = email.lastSignature()
-        self.assertEquals('smtp.gmx.de|587|bigtoy-by@gmx.de|{}|bigtoy-by@gmx.de|wk64@gmx.de'.format(code), signature)
+        self.assertIsEqual('smtp.gmx.de|587|bigtoy-by@gmx.de|{}|bigtoy-by@gmx.de|wk64@gmx.de'.format(code), signature)
         logger.contains('email "Testmail von Python" sent to wk64@gmx.de')
 
     def testEmailWithCC(self):
@@ -46,7 +46,7 @@ class EMailTest(UnitTestCase):
         email.setSmtpLogin('smtp.gmx.de', 587, user, code, True, user)
         email.sendTo('wk64@gmx.de', 'test1@hamatoma.de+test2@hamatoma.de', None, logger)
         signature = email.lastSignature()
-        self.assertEquals('smtp.gmx.de|587|bigtoy-by@gmx.de|{}|bigtoy-by@gmx.de|wk64@gmx.de'.format(code), signature)
+        self.assertIsEqual('smtp.gmx.de|587|bigtoy-by@gmx.de|{}|bigtoy-by@gmx.de|wk64@gmx.de'.format(code), signature)
         logger.contains('email "Testmail+cc" sent to wk64@gmx.de')
 
     def testEmailWithBCC(self):
@@ -59,7 +59,7 @@ class EMailTest(UnitTestCase):
         email.setSmtpLogin('smtp.gmx.de', 587, user, code, True, user)
         email.sendTo('wk64@gmx.de', None, 'test1@hamatoma.de+test2@hamatoma.de', logger)
         signature = email.lastSignature()
-        self.assertEquals('smtp.gmx.de|587|bigtoy-by@gmx.de|{}|bigtoy-by@gmx.de|wk64@gmx.de'.format(code), signature)
+        self.assertIsEqual('smtp.gmx.de|587|bigtoy-by@gmx.de|{}|bigtoy-by@gmx.de|wk64@gmx.de'.format(code), signature)
         logger.contains('email "Testmail+bcc" sent to wk64@gmx.de')
 
     def testSendSimpleEmail(self):
@@ -71,9 +71,9 @@ class EMailTest(UnitTestCase):
         signature = net.EMail.sendSimpleEMail('wk64@gmx.de', 'test sendSimpleEMail', 'It works',
             user, 'smtp.gmx.de', 587, user, code, True, logger)
         # .................smtp.gmx.de|587|bigtoy-by@gmx.de|1G.e.h.t.H.e.i.m|bigtoy-by@gmx.de|wk64@gmx.de
-        self.assertEquals('smtp.gmx.de|587|bigtoy-by@gmx.de|{}|bigtoy-by@gmx.de|wk64@gmx.de'.format(code), signature)
+        self.assertIsEqual('smtp.gmx.de|587|bigtoy-by@gmx.de|{}|bigtoy-by@gmx.de|wk64@gmx.de'.format(code), signature)
         current = logger.getMessages()
-        self.assertEquals(0, len(current))
+        self.assertIsEqual(0, len(current))
 
 if __name__ == '__main__':
     #import sys;sys.argv = ['', 'Test.testName']

@@ -26,41 +26,41 @@ class CsvProcessorTest(UnitTestCase):
     def testBasics(self):
         if DEBUG: return
         processor = base.CsvProcessor.CsvProcessor(self._logger)
-        self.assertEquals(0, processor._logger._errors)
+        self.assertIsEqual(0, processor._logger._errors)
 
     def testRead(self):
         if DEBUG: return
         processor = base.CsvProcessor.CsvProcessor(self._logger)
         processor.readFile(self._fn)
-        self.assertEquals('id;name;age', ';'.join(processor._colNames))
-        self.assertEquals(3, len(processor._rows))
-        self.assertEquals(3, len(processor._rows[0]))
-        self.assertEquals(3, len(processor._rows[1]))
-        self.assertEquals('1', processor._rows[0][0])
-        self.assertEquals('Jonny', processor._rows[0][1])
-        self.assertEquals('22', processor._rows[0][2])
-        self.assertEquals(3, processor._maxCols)
-        self.assertEquals(3, processor._minCols)
-        self.assertEquals(2, processor._rowMinCols)
-        self.assertEquals(2, processor._rowMaxCols)
+        self.assertIsEqual('id;name;age', ';'.join(processor._colNames))
+        self.assertIsEqual(3, len(processor._rows))
+        self.assertIsEqual(3, len(processor._rows[0]))
+        self.assertIsEqual(3, len(processor._rows[1]))
+        self.assertIsEqual('1', processor._rows[0][0])
+        self.assertIsEqual('Jonny', processor._rows[0][1])
+        self.assertIsEqual('22', processor._rows[0][2])
+        self.assertIsEqual(3, processor._maxCols)
+        self.assertIsEqual(3, processor._minCols)
+        self.assertIsEqual(2, processor._rowMinCols)
+        self.assertIsEqual(2, processor._rowMaxCols)
 
     def testSetFilterIndexes(self):
         if DEBUG: return
         processor = base.CsvProcessor.CsvProcessor(self._logger)
         processor.readFile(self._fn)
         processor.setFilterIndexes([2, '0'])
-        self.assertEquals(2, len(processor._indexes))
-        self.assertEquals(0, processor._indexes[0])
-        self.assertEquals(2, processor._indexes[1])
+        self.assertIsEqual(2, len(processor._indexes))
+        self.assertIsEqual(0, processor._indexes[0])
+        self.assertIsEqual(2, processor._indexes[1])
 
     def testSetFilterCols(self):
         if DEBUG: return
         processor = base.CsvProcessor.CsvProcessor(self._logger)
         processor.readFile(self._fn)
         processor.setFilterCols(['na*', 'a*'])
-        self.assertEquals(2, len(processor._indexes))
-        self.assertEquals(1, processor._indexes[0])
-        self.assertEquals(2, processor._indexes[1])
+        self.assertIsEqual(2, len(processor._indexes))
+        self.assertIsEqual(1, processor._indexes[0])
+        self.assertIsEqual(2, processor._indexes[1])
 
     def testInfoSummary(self):
         #if DEBUG: return
@@ -86,10 +86,10 @@ class CsvProcessorTest(UnitTestCase):
         processor = base.CsvProcessor.CsvProcessor(self._logger)
         processor.readFile(self._fn)
         processor.setColumnOrder(['a*', '*d', 'n*e'])
-        self.assertEquals(3, len(processor._columnOrder))
-        self.assertEquals(2, processor._columnOrder[0])
-        self.assertEquals(0, processor._columnOrder[1])
-        self.assertEquals(1, processor._columnOrder[2])
+        self.assertIsEqual(3, len(processor._columnOrder))
+        self.assertIsEqual(2, processor._columnOrder[0])
+        self.assertIsEqual(0, processor._columnOrder[1])
+        self.assertIsEqual(1, processor._columnOrder[2])
 
     def testWriteFile(self):
         if DEBUG: return

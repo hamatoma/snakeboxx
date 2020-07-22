@@ -15,7 +15,7 @@ class OptionProcessorTest(UnitTestCase):
     def testBasics(self):
         if debug: return
         processor = base.OptionProcessor.OptionProcessor(self._logger)
-        self.assertEquals(0, processor._logger._errors)
+        self.assertIsEqual(0, processor._logger._errors)
 
     def testBoolOption(self):
         #if debug: return

@@ -36,8 +36,8 @@ class JobControllerTest(UnitTestCase):
         base.JobController.JobController.writeJob('testNoArgs', [], self._controller.jobDirectory(), self._logger)
         self.assertTrue(self._controller.check())
         self.assertTrue(self._controller.check())
-        self.assertEquals(':a1|a2', self._controller.result('test2args'))
-        self.assertEquals(':', self._controller.result('testNoArgs'))
+        self.assertIsEqual(':a1|a2', self._controller.result('test2args'))
+        self.assertIsEqual(':', self._controller.result('testNoArgs'))
 
     def testClean(self):
         base.StringUtils.toFile(self._dummyFile, 'Hi')

@@ -48,7 +48,7 @@ hostname=testhost
             'install', 'satboxx'
             ])
         application = app.BaseApp.BaseApp.lastInstance()
-        self.assertEquals(0, application._logger._errors)
+        self.assertIsEqual(0, application._logger._errors)
         self.assertFileContent('''[Unit]
 Description=satboxx: sends data via REST to servers.
 After=syslog.target
@@ -96,7 +96,7 @@ hostname=testhost
             'uninstall', '--service=satboxx'
             ])
         email = app.BaseApp.BaseApp.lastInstance()
-        self.assertEquals(0, email._logger._errors)
+        self.assertIsEqual(0, email._logger._errors)
         self.assertFileNotExists(fnService)
         self.assertFileNotExists(fnApp)
 
@@ -106,8 +106,8 @@ hostname=testhost
             'help', 'help'
             ])
         application = app.BaseApp.BaseApp.lastInstance()
-        self.assertEquals(0, application._logger._errors)
-        self.assertEquals('''satboxx <global-opts> <mode> [<opts>]
+        self.assertIsEqual(0, application._logger._errors)
+        self.assertIsEqual('''satboxx <global-opts> <mode> [<opts>]
   Sends data via REST to some servers. Possible servers are WebDashFiller and Monitor.
 <mode>:
   help [<pattern-mode> [<pattern-submode>]]
@@ -127,7 +127,7 @@ satboxx help help sub''', application._resultText)
             'reload', 'satboxx'
             ])
         application = app.BaseApp.BaseApp.lastInstance()
-        self.assertEquals(1, application._logger._errors)
+        self.assertIsEqual(1, application._logger._errors)
         self.assertTrue(application._logger._firstErrors[0].find('not processed') > 0)
 
     def testDaemon(self):
@@ -138,7 +138,7 @@ satboxx help help sub''', application._resultText)
             'daemon', 'satboxx', 'satboxx', '--count=1', '--interval=2'
             ])
         application = app.BaseApp.BaseApp.lastInstance()
-        self.assertEquals(4, application._logger._errors)
+        self.assertIsEqual(4, application._logger._errors)
         for item in application._logger._firstErrors:
             self.assertMatches(r'status 405 \[Not Allowed\]', item)
 
@@ -148,8 +148,8 @@ satboxx help help sub''', application._resultText)
             'reload', 'satboxx'
             ])
         application = app.BaseApp.BaseApp.lastInstance()
-        self.assertEquals(1, application._logger._errors)
-        self.assertEquals('reload request was not processed', application._logger._firstErrors[0])
+        self.assertIsEqual(1, application._logger._errors)
+        self.assertIsEqual('reload request was not processed', application._logger._firstErrors[0])
 
     def testTestFilesystem(self):
         #if debug: return
@@ -159,7 +159,7 @@ satboxx help help sub''', application._resultText)
             'test', 'fs', '2', '2'
             ])
         application = app.BaseApp.BaseApp.lastInstance()
-        self.assertEquals(6, application._logger._errors)
+        self.assertIsEqual(6, application._logger._errors)
 
 if __name__ == '__main__':
     # import sys;sys.argv = ['', 'Test.testName']

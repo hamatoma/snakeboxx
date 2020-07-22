@@ -41,7 +41,7 @@ logger={}
                           'install', 'osboxx'
                           ])
         application = app.BaseApp.BaseApp.lastInstance()
-        self.assertEquals(0, application._logger._errors)
+        self.assertIsEqual(0, application._logger._errors)
         fn = self._configDir + os.sep + 'text.conf'
         self.assertFileExists(fn)
         self.assertFileContent('''# created by TextApp
@@ -58,7 +58,7 @@ logfile=/var/log/local/textboxx.log
                           'uninstall', '--service=textboxx'
                           ])
         email = app.BaseApp.BaseApp.lastInstance()
-        self.assertEquals(0, email._logger._errors)
+        self.assertIsEqual(0, email._logger._errors)
         self.assertFileNotExists(fnApp)
 
     def testHelp(self):
@@ -68,8 +68,8 @@ logfile=/var/log/local/textboxx.log
                           'help', 'help'
                           ])
         application = app.BaseApp.BaseApp.lastInstance()
-        self.assertEquals(0, application._logger._errors)
-        self.assertEquals('''textboxx <global-opts> <mode> [<opts>]
+        self.assertIsEqual(0, application._logger._errors)
+        self.assertIsEqual('''textboxx <global-opts> <mode> [<opts>]
   Searching and modifying in text files.
 <mode>:
   help [<pattern-mode> [<pattern-submode>]]
@@ -94,10 +94,10 @@ def''')
                           'exec-rules', '>/2/', fn
                           ])
         application = app.BaseApp.BaseApp.lastInstance()
-        self.assertEquals(0, application._logger._errors)
+        self.assertIsEqual(0, application._logger._errors)
         state = application._processor._lastState
-        self.assertEquals(1, state._cursor._line)
-        self.assertEquals(3, state._cursor._col)
+        self.assertIsEqual(1, state._cursor._line)
+        self.assertIsEqual(3, state._cursor._col)
 
     def testCsvDescribe(self):
         if DEBUG:
@@ -106,7 +106,7 @@ def''')
                           'csv-describe'
                           ])
         application = app.BaseApp.BaseApp.lastInstance()
-        self.assertEquals(0, application._logger._errors)
+        self.assertIsEqual(0, application._logger._errors)
 
     def testCsvExecute(self):
         if DEBUG:
@@ -120,7 +120,7 @@ def''')
                           'csv-execute', 'info:summary', fn
                           ])
         application = app.BaseApp.BaseApp.lastInstance()
-        self.assertEquals(0, application._logger._errors)
+        self.assertIsEqual(0, application._logger._errors)
 
     def testExecRules2(self):
         if DEBUG:
@@ -133,10 +133,10 @@ def''')
                           'exec-rules', '>/2/ </Y/i', fn
                           ])
         application = app.BaseApp.BaseApp.lastInstance()
-        self.assertEquals(0, application._logger._errors)
+        self.assertIsEqual(0, application._logger._errors)
         state = application._processor._lastState
-        self.assertEquals(1, state._cursor._line)
-        self.assertEquals(1, state._cursor._col)
+        self.assertIsEqual(1, state._cursor._line)
+        self.assertIsEqual(1, state._cursor._col)
 
     def testGrep(self):
         if DEBUG:
@@ -149,8 +149,8 @@ def''')
                           'grep', r'\d+', fn
                           ])
         application = app.BaseApp.BaseApp.lastInstance()
-        self.assertEquals(0, application._logger._errors)
-        self.assertEquals(1, len(application._resultLines))
+        self.assertIsEqual(0, application._logger._errors)
+        self.assertIsEqual(1, len(application._resultLines))
         self.assertMatches('test1.txt:xy123', application._resultLines[0])
 
     def testGrepFormat(self):
@@ -164,11 +164,11 @@ def''')
                           'grep', r'\d+', fn, '-f%%%T%# %0', '--format-line=%%%T%# %0', '-F== File %p %n%L', '--format-file=== File %p %n%L'
                           ])
         application = app.BaseApp.BaseApp.lastInstance()
-        self.assertEquals(0, application._logger._errors)
-        self.assertEquals(2, len(application._resultLines))
+        self.assertIsEqual(0, application._logger._errors)
+        self.assertIsEqual(2, len(application._resultLines))
         self.assertMatches('== File \S+grep test1.txt\n',
                            application._resultLines[0])
-        self.assertEquals('%\t2 123', application._resultLines[1])
+        self.assertIsEqual('%\t2 123', application._resultLines[1])
 
     def testGrepIgnoreInvertLineNumber(self):
         if DEBUG:
@@ -181,8 +181,8 @@ BCD''')
                           'grep', r'B', fn, '-v', '--invert-match', '-i', '--ignore-case', '-n', '--line-number'
                           ])
         application = app.BaseApp.BaseApp.lastInstance()
-        self.assertEquals(0, application._logger._errors)
-        self.assertEquals(1, len(application._resultLines))
+        self.assertIsEqual(0, application._logger._errors)
+        self.assertIsEqual(1, len(application._resultLines))
         self.assertMatches('test1.txt-2:xy123', application._resultLines[0])
 
     def testGrepWordMatchOnly(self):
@@ -196,8 +196,8 @@ B._C.D''')
                           'grep', r'\w\w', fn, '-o', '-w', '-n', '--word-regexpr', '--only-matching'
                           ])
         application = app.BaseApp.BaseApp.lastInstance()
-        self.assertEquals(0, application._logger._errors)
-        self.assertEquals(2, len(application._resultLines))
+        self.assertIsEqual(0, application._logger._errors)
+        self.assertIsEqual(2, len(application._resultLines))
         self.assertMatches('test1.txt-1:ab', application._resultLines[0])
         self.assertMatches('test1.txt-3:_C', application._resultLines[1])
 
@@ -209,8 +209,8 @@ B._C.D''')
                           'grep', r'[abe]', fn, '-A1', '--above-context=1', '--line-number'
                           ])
         application = app.BaseApp.BaseApp.lastInstance()
-        self.assertEquals(0, application._logger._errors)
-        self.assertEquals(4, len(application._resultLines))
+        self.assertIsEqual(0, application._logger._errors)
+        self.assertIsEqual(4, len(application._resultLines))
         self.assertMatches('test1.txt-1:a', application._resultLines[0])
         self.assertMatches('test1.txt-2:b', application._resultLines[1])
         self.assertMatches('test1.txt-4:d', application._resultLines[2])
@@ -225,8 +225,8 @@ B._C.D''')
                           'grep', r'[abef]', fn, '-B1', '--below-context=1', '--line-number'
                           ])
         application = app.BaseApp.BaseApp.lastInstance()
-        self.assertEquals(0, application._logger._errors)
-        self.assertEquals(6, len(application._resultLines))
+        self.assertIsEqual(0, application._logger._errors)
+        self.assertIsEqual(6, len(application._resultLines))
         self.assertMatches('test1.txt-1:a', application._resultLines[0])
         self.assertMatches('test1.txt-2:b', application._resultLines[1])
         self.assertMatches('test1.txt-3:c', application._resultLines[2])
@@ -243,8 +243,8 @@ B._C.D''')
                           'grep', r'[abf]', fn, '-C1', '--context=1', '--line-number'
                           ])
         application = app.BaseApp.BaseApp.lastInstance()
-        self.assertEquals(0, application._logger._errors)
-        self.assertEquals(6, len(application._resultLines))
+        self.assertIsEqual(0, application._logger._errors)
+        self.assertIsEqual(6, len(application._resultLines))
         self.assertMatches('test1.txt-1:a', application._resultLines[0])
         self.assertMatches('test1.txt-2:b', application._resultLines[1])
         self.assertMatches('test1.txt-3:c', application._resultLines[2])
@@ -263,12 +263,12 @@ B._C.D''')
                           'grep', r'\d+(\.\d+)?', fn, '-b1', '--bolow-chars=1', '--line-number', '-a2', '--above-chars=2', '-f%t'
                           ])
         application = app.BaseApp.BaseApp.lastInstance()
-        self.assertEquals(0, application._logger._errors)
-        self.assertEquals(4, len(application._resultLines))
-        self.assertEquals(': 12.33', application._resultLines[0])
-        self.assertEquals('1.1+', application._resultLines[1])
-        self.assertEquals('1+2*', application._resultLines[2])
-        self.assertEquals('2*4.99', application._resultLines[3])
+        self.assertIsEqual(0, application._logger._errors)
+        self.assertIsEqual(4, len(application._resultLines))
+        self.assertIsEqual(': 12.33', application._resultLines[0])
+        self.assertIsEqual('1.1+', application._resultLines[1])
+        self.assertIsEqual('1+2*', application._resultLines[2])
+        self.assertIsEqual('2*4.99', application._resultLines[3])
 
     def testReplace(self):
         if DEBUG:
@@ -282,7 +282,7 @@ bla bla
                           'replace', r'Version: (\d+\.\d+)', 'V%1', fn, '-i', '-b%', '-B.bak', '--backup=.bak'
                           ])
         application = app.BaseApp.BaseApp.lastInstance()
-        self.assertEquals(0, application._logger._errors)
+        self.assertIsEqual(0, application._logger._errors)
         self.assertFileContent('''line 1
 V12.33
 bla bla
@@ -298,7 +298,7 @@ bla bla
                           'replace', r'(\d+)', '...', fn, '-R', '--not-regexpr'
                           ])
         application = app.BaseApp.BaseApp.lastInstance()
-        self.assertEquals(0, application._logger._errors)
+        self.assertIsEqual(0, application._logger._errors)
         self.assertFileContent('...', fn)
 
     def testReplaceString(self):
@@ -308,8 +308,8 @@ bla bla
                           'replace-string', r'(Dirs|Files): (\d+)', '%2 %1', 'dirs: 3 files: 12', '-b%', '--ignore-case'
                           ])
         application = app.BaseApp.BaseApp.lastInstance()
-        self.assertEquals(0, application._logger._errors)
-        self.assertEquals('3 dirs 12 files', application._resultText)
+        self.assertIsEqual(0, application._logger._errors)
+        self.assertIsEqual('3 dirs 12 files', application._resultText)
 
     def testReplaceMany(self):
         if DEBUG: return
@@ -327,7 +327,7 @@ a bcabc 11
                           'replace-many', fnData, fn
                           ])
         application = app.BaseApp.BaseApp.lastInstance()
-        self.assertEquals(0, application._logger._errors)
+        self.assertIsEqual(0, application._logger._errors)
         self.assertFileContent('''Y
 a bcY XXXX
  Y XX a
@@ -344,7 +344,7 @@ max_memory=2048M
                           'insert-or-replace', r'^max_memory=', 'max_memory=1G', fn
                           ])
         application = app.BaseApp.BaseApp.lastInstance()
-        self.assertEquals(0, application._logger._errors)
+        self.assertIsEqual(0, application._logger._errors)
         self.assertFileContent('''#
 max_memory=1G
 # blub

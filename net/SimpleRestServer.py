@@ -58,7 +58,7 @@ class EchoTaskHandler(SimpleTaskHandler):
                     host, port)
 
             else:
-                self._requestHandler.stringData = self._request.resource + "\n"
+                self._requestHandler.stringData = super._request.resource + "\n"
             if self._requestHandler.paramMap:
                 self._requestHandler.stringData += repr(
                     self._requestHandler.paramMap) + "\n"

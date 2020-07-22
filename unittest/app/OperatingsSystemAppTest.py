@@ -38,7 +38,7 @@ logger={}
             'install', 'osboxx'
             ])
         application = app.BaseApp.BaseApp.lastInstance()
-        self.assertEquals(0, application._logger._errors)
+        self.assertIsEqual(0, application._logger._errors)
         fn = self._configDir + os.sep + 'operatingsystem.conf'
         self.assertFileExists(fn)
         self.assertFileContent('''# created by OperatingSystemApp
@@ -54,7 +54,7 @@ logfile=/var/log/local/osboxx.log
             'uninstall', '--service=osboxx'
             ])
         email = app.BaseApp.BaseApp.lastInstance()
-        self.assertEquals(0, email._logger._errors)
+        self.assertIsEqual(0, email._logger._errors)
         self.assertFileNotExists(fnApp)
 
     def testHelp(self):
@@ -63,8 +63,8 @@ logfile=/var/log/local/osboxx.log
             'help', 'help'
             ])
         application = app.BaseApp.BaseApp.lastInstance()
-        self.assertEquals(0, application._logger._errors)
-        self.assertEquals('''osboxx <global-opts> <mode> [<opts>]
+        self.assertIsEqual(0, application._logger._errors)
+        self.assertIsEqual('''osboxx <global-opts> <mode> [<opts>]
   Offers service round about the operating system.
 <mode>:
   help [<pattern-mode> [<pattern-submode>]]
@@ -91,9 +91,9 @@ command="/usr/local/bin/rrsync /tmp",no-X11-forwarding ssh-rsa AABCEDON9999248X.
             'auth-keys', 'bupsupply'
             ])
         application = app.BaseApp.BaseApp.lastInstance()
-        self.assertEquals(0, application._logger._errors)
+        self.assertIsEqual(0, application._logger._errors)
         content = base.StringUtils.fromFile(fnAuth)
-        self.assertEquals('''ssh-rsa AAAAB3NIH...DnrEn09rg593stn/hm0blnUDBCr8AEZIj hm@caribou
+        self.assertIsEqual('''ssh-rsa AAAAB3NIH...DnrEn09rg593stn/hm0blnUDBCr8AEZIj hm@caribou
 command="/usr/local/bin/rrsync /tmp",no-X11-forwarding ssh-rsa AABCEDON9999248X...TeLwGVjM1XTw== exttmp@dragon
 ''', content)
         fnPublic2 = '/tmp/public2.keys'
@@ -107,9 +107,9 @@ command="/usr/local/bin/rrsync /tmp",no-X11-forwarding ssh-rsa AABCEDON9999248X.
             'auth-keys', 'bupsupply', r'--filter=\@caribou', fnPublic2
             ])
         application = app.BaseApp.BaseApp.lastInstance()
-        self.assertEquals(0, application._logger._errors)
+        self.assertIsEqual(0, application._logger._errors)
         content = base.StringUtils.fromFile(fnAuth)
-        self.assertEquals('''ssh-rsa AAAAB3NIH...DnrEn09rg593stn/hm0blnUDBCr8AEZIj hm@caribou
+        self.assertIsEqual('''ssh-rsa AAAAB3NIH...DnrEn09rg593stn/hm0blnUDBCr8AEZIj hm@caribou
 command="/usr/local/bin/rrsync /tmp",no-X11-forwarding ssh-rsa AABCEDON9999248X...TeLwGVjM1XTw== exttmp@dragon
 command="/usr/local/bin/rrsync /tmp",no-X11-forwarding ssh-rsa AAAAB3NzaC1yc2EA...TeLwGVjM1XTw== exttmp@caribou
 ''', content)
