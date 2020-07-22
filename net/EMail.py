@@ -5,7 +5,7 @@ Created: 2020.06.24
 '''
 import smtplib
 import imghdr
-import email.message
+#import email.message
 
 import base.MemoryLogger
 import base.StringUtils

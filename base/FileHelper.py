@@ -23,7 +23,7 @@ import base.TextProcessor
 REG_EXPR_WILDCARDS = re.compile(r'[*?\[\]]')
 GLOBAL_LOGGER = None
 GLOBAL_UNIT_TEST_MODE = None
-
+CURRDIR_PREFIX = '.' + os.sep
 
 class DirInfo:
     '''Stores the directory info
@@ -935,6 +935,8 @@ def listFile(statInfo, full, orderDateSize=True, humanReadable=True):
     @param orderDateSize: True: order is date left of size False: order is size leftof date
     @param humanReadable: True: better for reading (matching unit), e.g. "10.7 GByte" or "3 kByte"
     '''
+    if full.startswith(CURRDIR_PREFIX):
+        full = full[2:]
     if stat.S_ISDIR(statInfo.st_mode):
         size = '<dir>'
     elif humanReadable:

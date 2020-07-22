@@ -15,6 +15,7 @@ REG_EXPR_DATE = re.compile(r'^(\d{4})[.-](\d\d?)[.-](\d\d?)')
 # ...................................1.....1.2....2 a..3.....3a
 REG_EXPR_TIME = re.compile(r'^(\d\d?):(\d\d?)(?::(\d\d?))?$')
 REG_EXPR_INT = re.compile(r'^0[xX]([0-9a-fA-F]+)|0([0-7]+)|([+-]?\d+)$')
+REG_EXPR_SIZE = re.compile(r'^(\d+)((?:[kmgt]i?)?(?:b(?:ytes?)?)?)?$', base.Const.IGNORE_CASE)
 LOGGER = None
 
 
@@ -85,6 +86,44 @@ def boolOption(longName, shortName, option):
                 '{}: bool expected ("true", "false"), not "{}": '.format(longName, strValue))
     return rc
 
+
+def parseSize(size, errors):
+    '''Parses string with a filesize syntax.
+    @param size: the string with the size to process, e.g. '44kiByte'
+    @param errors: OUT: error messages will be appended to this list
+    @return: None: wrong syntax otherwise: the size as integer
+    '''
+    rc = None
+    if size == '':
+        errors.append('size cannot be empty')
+    else:
+        matcher = REG_EXPR_SIZE.match(size)
+        if matcher is None:
+            errors.append(
+                f'not a valid size {size}. Expected <number>[<unit>], e.g. 10Mi')
+        else:
+            rc = int(matcher.group(1))
+            if matcher.lastindex > 1:
+                factor = 1
+                unit = matcher.group(2).lower()
+                if unit.startswith('ki'):
+                    factor = 1024
+                elif unit.startswith('k'):
+                    factor = 1000
+                elif unit.startswith('mi'):
+                    factor = 1024 * 1024
+                elif unit.startswith('m'):
+                    factor = 1000 * 1000
+                elif unit.startswith('gi'):
+                    factor = 1024 * 1024 * 1024
+                elif unit.startswith('g'):
+                    factor = 1000 * 1000 * 1000
+                elif unit.startswith('ti'):
+                    factor = 1024 * 1024 * 1024 * 1024
+                elif unit.startswith('t'):
+                    factor = 1000 * 1000 * 1000 * 1000
+                rc *= factor
+    return rc
 
 def escChars(text):
     '''Return the text with escaped meta characters like \n, \t, \\.
@@ -401,6 +440,7 @@ def regExprOption(longName, shortName, option, isCaseSensitive=False):
     @param longName: the long option name, e.g. 'group-name'
     @param shortName: the short option name, e.g. 'n'
     @param option: the option to inspect, e.g. '--group-name=admin' or '-nadmin'
+    @param isCaseSensitive: True: the pattern is case sensitiv
     @return: None: opt is not the given option
         a string: the error message
         a RegExpr instance: the compiled regular expression
@@ -411,6 +451,22 @@ def regExprOption(longName, shortName, option, isCaseSensitive=False):
         if rc is None:
             rc = 'not a regular expression in --{}: {}'.format(
                 longName, option)
+    return rc
+
+def sizeOption(longName, shortName, option, errors):
+    '''Tests whether an option is a option defining a filesize, e.g. '144MiByte'
+    @param longName: the long option name, e.g. 'group-name'
+    @param shortName: the short option name, e.g. 'n'
+    @param option: the option to inspect, e.g. '--min-size=10k'
+    @param errors: OUT: error messages will be appended to this list
+    @return: None: opt is not the given option
+        a string: the error message
+        an int the size
+    '''
+    rc = None
+    size = stringOption(longName, shortName, option)
+    if size is not None:
+        rc = parseSize(size, errors)
     return rc
 
 

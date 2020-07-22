@@ -112,7 +112,7 @@ class DirTraverser:
         dirs = []
         for node in os.listdir(directory):
             full = directory + os.sep + node
-            statInfo = os.lstat(full)
+            self._statInfo = statInfo = os.lstat(full)
             self._isDir = stat.S_ISDIR(statInfo.st_mode)
             if self._isDir:
                 self._ignoredDirs += 1
@@ -254,14 +254,14 @@ def fromOptions(pattern, options, errors):
             maxYields = intValue
             toDelete.append(ix)
             continue
-        strValue = base.StringUtils.stringOption('min-size', 's', option)
-        if intValue is not None:
-            minSize = _bytesToSize(strValue, errors)
+        sizeValue = base.StringUtils.sizeOption('min-size', 's', option, errors)
+        if sizeValue is not None:
+            minSize = sizeValue
             toDelete.append(ix)
             continue
-        strValue = base.StringUtils.stringOption('max-size', 's', option)
+        sizeValue = base.StringUtils.sizeOption('max-size', 's', option, errors)
         if intValue is not None:
-            maxSize = _bytesToSize(strValue, errors)
+            maxSize = sizeValue
             toDelete.append(ix)
             continue
         strValue = base.StringUtils.stringOption('older-than', 'o', option)
@@ -286,37 +286,6 @@ def _stringToDate(string, errors):
         rc = datetime.datetime.strptime(string, '%Y.%m.%d')
     if rc is None:
         errors.append('wrong datetime syntax: {}'.format(string))
-    return rc
-
-
-def _bytesToSize(string, errors):
-    rc = None
-    matcher = re.match(r'^(\d+)([kKmMgGtT]i?)?$', string)
-    if matcher is not None:
-        errors.append(
-            'not a valid file-size {}. Expected <number>[<unit>], e.g. 10Mi'.format(string))
-    else:
-        rc = int(matcher.group(1))
-        if matcher.lastindex > 1:
-            factor = 1
-            unit = matcher.group(2).lowercase()
-            if unit == 'k':
-                factor = 1000
-            elif unit == 'ki':
-                factor = 1024
-            elif unit == 'm':
-                factor = 1000 * 1000
-            elif unit == 'mi':
-                factor = 1024 * 1024
-            elif unit == 'g':
-                factor = 1000 * 1000 * 1000
-            elif unit == 'gi':
-                factor = 1024 * 1024 * 1024
-            if unit == 't':
-                factor = 1000 * 1000 * 1000 * 1000
-            elif unit == 'ti':
-                factor = 1024 * 1024 * 1024 * 1024
-            rc *= factor
     return rc
 
 

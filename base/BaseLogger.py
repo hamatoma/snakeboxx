@@ -72,7 +72,7 @@ class BaseLogger:
             self._inUse = False
         return True
 
-    def log(self, minLevel=base.Const.LEVEL_SUMMARY):
+    def log(self, message=None, minLevel=base.Const.LEVEL_SUMMARY):
         '''Logs a message.
         @param message: the string to log
         @param level: logging will be done only if level >= self._verboseLevel

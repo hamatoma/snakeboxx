@@ -5,10 +5,8 @@ Created: 2020.06.24
 @author: hm
 '''
 import sys
-from base.Const import LEVEL_SUMMARY
 import snakeboxx
 
-import base.CsvProcessor
 import base.DirTraverser
 import base.FileHelper
 import app.BaseApp
@@ -118,12 +116,22 @@ logfile=/var/log/local/dirboxx.log
  <what>: 'all' or a comma separated list of requests: o or oldest, y or youngest, l or largest, s or smallest
  <directory>: the base directory for searching. Default: the current directory
  <option>:
+  all options of the DirTraverser are allowed
   --count=<count>
    max. count of elements in the extrema list
   --min-length=<size>
    relevant for "smallest": only file larger than <size> will be inspected
  ''', '''APP-NAME extrema o,y,l
 APP-NAME extrema oldest,largest /home --exclude-dir=.git
+''')
+
+        self._usageInfo.addMode('list', '''list [<pattern>] [<options>]
+ Displays the metadata (size, date/time...) of the specified dirs/files.
+ <pattern>: defines the files/dirs to display. Default: the current directory
+ <option>:
+  all options of the DirTraverser are allowed
+ ''', '''APP-NAME list
+APP-NAME list *.txt --exclude-dirs=.git --file-type=fl --min-size=20k --younger-than=2020.01.30-05:00:00
 ''')
 
     def extrema(self):
@@ -151,7 +159,6 @@ APP-NAME extrema oldest,largest /home --exclude-dir=.git
             if value != None:
                 minLength = value
                 continue
-        self._processor = base.CsvProcessor.CsvProcessor(self._logger)
         errors = []
         self._traverser = base.DirTraverser.fromOptions(
             directory, self._programOptions, errors)
@@ -180,7 +187,7 @@ APP-NAME extrema oldest,largest /home --exclude-dir=.git
                             or self._traverser._statInfo.st_size >= smallest._minLength):
                         smallest.merge(filename, self._traverser._statInfo)
             summary = self._traverser.summary()
-            self._logger.log(summary, LEVEL_SUMMARY)
+            self._logger.log(summary, base.Const.LEVEL_SUMMARY)
             self._resultLines = summary.split('\n')
             if oldest is not None:
                 oldest.show('the oldest files:', self._resultLines)
@@ -192,12 +199,35 @@ APP-NAME extrema oldest,largest /home --exclude-dir=.git
                 largest.show('the largest files:', self._resultLines)
             print('\n'.join(self._resultLines))
 
+    def list(self):
+        '''Displays the meta data of the specified files/dirs.
+        '''
+        self._resultLines = []
+        directory = self.shiftProgramArgument('.')
+        errors = []
+        self._traverser = base.DirTraverser.fromOptions(
+            directory, self._programOptions, errors)
+        if errors:
+            for error in errors:
+                self._logger.error(error)
+        else:
+            for filename in self._traverser.next(self._traverser._directory, 0):
+                info = base.FileHelper.listFile(
+                    self._traverser._statInfo, filename, orderDateSize=True, humanReadable=True)
+                self._resultLines.append(info)
+                print(info)
+            summary = self._traverser.summary()
+            self._logger.log(summary, base.Const.LEVEL_SUMMARY)
+            self._resultLines += summary.split('\n')
+
     def run(self):
         '''Implements the tasks of the application.
         '''
         self._hostname = self._configuration.getString('hostname', '<host>')
         if self._mainMode == 'extrema':
             self.extrema()
+        elif self._mainMode == 'list':
+            self.list()
         else:
             self.abort('unknown mode: ' + self._mainMode)
 

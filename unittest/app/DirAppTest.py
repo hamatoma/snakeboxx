@@ -12,7 +12,7 @@ import app.BaseApp
 import app.DirApp
 import base.StringUtils
 
-debug = False
+DEBUG = True
 
 class DirAppTest(UnitTestCase):
     def __init__(self):
@@ -25,7 +25,7 @@ class DirAppTest(UnitTestCase):
     def _createConfig(self):
         self._configFile = self.tempFile('dirapp.conf', 'unittest.dir', 'dirboxx')
         self._configDir = os.path.dirname(self._configFile)
-        self._logFile = self._configDir + os.sep + 'test.log';
+        self._logFile = self._configDir + os.sep + 'test.log'
         base.StringUtils.toFile(self._configFile, '''# created by DirApp
 logger={}
 '''.format(self._logFile))
@@ -34,20 +34,20 @@ logger={}
         shutil.rmtree(self.tempDir('unittest.dir'))
 
     def testInstall(self):
-        if debug: return
+        if DEBUG: return
         app.DirApp.main(['-v3', '--test-target=' + self._configDir, '--test-source=' + self._configDir, '-c' + self._configDir,
             'install', 'osboxx'
             ])
         application = app.BaseApp.BaseApp.lastInstance()
         self.assertEquals(0, application._logger._errors)
-        fn = self._configDir + os.sep + 'text.conf'
+        fn = self._configDir + os.sep + 'dir.conf'
         self.assertFileExists(fn)
         self.assertFileContent('''# created by DirApp
 logfile=/var/log/local/dirboxx.log
 '''.format(), fn)
 
     def testUninstall(self):
-        if debug: return
+        if DEBUG: return
         base.FileHelper.clearDirectory(self._configDir)
         fnApp = self._configDir + os.sep + 'dirboxx'
         base.StringUtils.toFile(fnApp, 'application')
@@ -59,7 +59,7 @@ logfile=/var/log/local/dirboxx.log
         self.assertFileNotExists(fnApp)
 
     def testHelp(self):
-        if debug: return
+        if DEBUG: return
         app.DirApp.main(['-v3',
             'help', 'help'
             ])
@@ -80,7 +80,7 @@ dirboxx help help sub
 ''', application._resultText)
 
     def testExtrema(self):
-        if debug: return
+        if DEBUG: return
         base.FileHelper.createFileTree('''file1.txt|this is in file 123456|664|2020-01-22 02:44:32
 dir1/file2.txt|this is in file 1|664|2020-01-29 02:44:32
 dir1/file3.txt|this is in file 123456789|664|2020-01-23 02:44:32
@@ -114,6 +114,74 @@ ignored: dir(s): 0 file(s): 0
      22 Byte 2020.01.22 02:44:32 /tmp/unittest.dir/src/file1.txt
      17 Byte 2020.01.29 02:44:32 /tmp/unittest.dir/src/dir1/file2.txt
 ''', '\n'.join(application._resultLines))
+
+    def testExtremaNoArg(self):
+        if DEBUG: return
+        baseDir = self.tempDir('noarg', 'extrema')
+        base.FileHelper.createFileTree('''file1.txt|this is in file 123456|664|2020-01-22 02:44:32
+''', baseDir)
+        os.chdir(baseDir)
+        app.DirApp.main(['-v3',
+            'extrema', 
+            ])
+        application = app.BaseApp.BaseApp.lastInstance()
+        self.assertEquals(0, application._logger._errors)
+        current = '\n'.join(application._resultLines)
+        self.assertEquals('''dir(s): 1 file(s): 1 / 22 Byte
+ignored: dir(s): 0 file(s): 0
+== the oldest files:
+2020.01.22 02:44:32      22 Byte file1.txt
+== the smallest files:
+     22 Byte 2020.01.22 02:44:32 file1.txt
+== the youngest files:
+2020.01.22 02:44:32      22 Byte file1.txt
+== the largest files:
+     22 Byte 2020.01.22 02:44:32 file1.txt
+''', current)
+
+    def testList(self):
+        if DEBUG: return
+        baseDir = self.tempDir('noarg', 'list')
+        base.FileHelper.createFileTree('''dir1/|755|2020-02-29 04:24:32
+file1.txt|this is in file 123456|664|2020-01-22 02:44:32
+dir1/file2.dat|this is in file 123456xxxxxxxxx|664|2019-01-22 12:04:39
+''', baseDir)
+        os.chdir(baseDir)
+        app.DirApp.main(['-v3',
+            'list', 
+            ])
+        application = app.BaseApp.BaseApp.lastInstance()
+        self.assertEquals(0, application._logger._errors)
+        current = '\n'.join(application._resultLines)
+        self.assertEquals('''2020.02.29 04:24:32        <dir> dir1
+2020.01.22 02:44:32      22 Byte file1.txt
+2019.01.22 12:04:39      31 Byte dir1/file2.dat
+dir(s): 2 file(s): 2 / 53 Byte
+ignored: dir(s): 0 file(s): 0
+''', current)
+
+    def testListExample(self):
+        #if DEBUG: return
+        baseDir = self.tempDir('noarg', 'list')
+        base.FileHelper.createFileTree('''dir1/|755|2020-02-29 04:24:32
+file1.txt|1234|664|2020-01-01 02:44:32
+dir1/file2.txt|this is in file 123456xxxxxxxxx|664|2020-01-22 12:04:39
+dir1/file3.txt|123|664|2020-01-22 12:04:39
+''', baseDir)
+        os.chdir(baseDir)
+        app.DirApp.main(['-v3',
+            'list', '*.txt', '--exclude-dirs=.git', '--file-type=fl',
+            '--max-size=5', '--younger-than=2020.01.01-05:00:00'
+            ])
+        application = app.BaseApp.BaseApp.lastInstance()
+        self.assertEquals(0, application._logger._errors)
+        current = '\n'.join(application._resultLines)
+        self.assertEquals('''2020.01.22 12:04:39      31 Byte dir1/file2.txt
+2020.01.22 12:04:39       3 Byte dir1/file3.txt
+2020.07.22 00:41:32 dir(s): 2 file(s): 2 / 34 Byte
+ignored: dir(s): 0 file(s): 2
+''', current)
+
 
 if __name__ == '__main__':
     # import sys;sys.argv = ['', 'Test.testName']
