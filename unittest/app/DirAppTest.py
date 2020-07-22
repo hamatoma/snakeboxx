@@ -182,7 +182,11 @@ dir1/file3.txt|123|664|2020-01-22 12:04:39
         current = '\n'.join(application._resultLines)
         self.assertIsEqual('''2020.01.22 12:04:39       3 Byte dir1/file3.txt
 dir(s): 2 file(s): 1 / 3 Byte
+<<<<<<< Upstream, based on dev_options
 ignored: dir(s): 0 file(s): 2
+=======
+ignored: dir(s): 1 file(s): 2
+>>>>>>> 8257d4b V2020.07.22.00: refactoring, fixes: DirTraverser FileHelper
 ''', current)
 
 if __name__ == '__main__':

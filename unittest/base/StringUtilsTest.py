@@ -481,7 +481,10 @@ c=333
         #self.log('expecting x errors:')
         self.assertNone(base.StringUtils.sizeOption('min-size', 'm', '-m', errors))
         self.assertIsEqual('size cannot be empty', errors[0])
+<<<<<<< Upstream, based on dev_options
 
+=======
+>>>>>>> 8257d4b V2020.07.22.00: refactoring, fixes: DirTraverser FileHelper
 
 if __name__ == '__main__':
     #import sys;sys.argv = ['', 'Test.testName']

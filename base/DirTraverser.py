@@ -130,7 +130,11 @@ class DirTraverser:
                     continue
                 if depth < self._maxDepth:
                     self._ignoredDirs -= 1
+<<<<<<< Upstream, based on dev_options
                 if self._dirPattern is None:
+=======
+                if self._dirPattern == None:
+>>>>>>> 8257d4b V2020.07.22.00: refactoring, fixes: DirTraverser FileHelper
                     continue
                 if not self._findDirs:
                     continue
