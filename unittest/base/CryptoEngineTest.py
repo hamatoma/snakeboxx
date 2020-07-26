@@ -9,9 +9,13 @@ import base.MemoryLogger
 import os.path
 import base64
 
-debug = False
+DEBUG = False
 
 class CryptoEngineTest(UnitTestCase):
+
+    def debugFlag(self):
+        base.StringUtils.avoidWarning(self)
+        return DEBUG
 
     def testBasic(self):
         logger = base.MemoryLogger.MemoryLogger()
@@ -54,7 +58,7 @@ class CryptoEngineTest(UnitTestCase):
         return rc
 
     def testEncodeBinaryBase(self):
-        if debug:
+        if DEBUG:
             return
         logger = base.MemoryLogger.MemoryLogger()
         engine = base.CryptoEngine.CryptoEngine(logger)
@@ -72,7 +76,7 @@ class CryptoEngineTest(UnitTestCase):
         self.assertIsEqual(text, decoded)
 
     def testEncodeBinary(self):
-        if debug:
+        if DEBUG:
             return
         if self.assertTrue(False):
             logger = base.MemoryLogger.MemoryLogger()
@@ -126,7 +130,7 @@ class CryptoEngineTest(UnitTestCase):
                     self.assertIsEqual(data, padData[2])
 
     def testSetSeedFromString(self):
-        if debug:
+        if DEBUG:
             return
         logger = base.MemoryLogger.MemoryLogger()
         engine = base.CryptoEngine.CryptoEngine(logger)
@@ -138,7 +142,7 @@ class CryptoEngineTest(UnitTestCase):
         self.assertIsEqual(604275342, engine.nextInt())
 
     def testSaveRestore(self):
-        if debug:
+        if DEBUG:
             return
         logger = base.MemoryLogger.MemoryLogger()
         engine = base.CryptoEngine.CryptoEngine(logger)
@@ -150,7 +154,7 @@ class CryptoEngineTest(UnitTestCase):
         self.assertIsEqual(value1, value2)
 
     def testBase64(self):
-        if False and debug:
+        if False and DEBUG:
             return
         buffer = b'x'
         '''

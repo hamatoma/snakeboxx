@@ -12,7 +12,7 @@ import app.BaseApp
 import app.OperatingSystemApp
 import base.StringUtils
 
-debug = False
+DEBUG = False
 
 class OperatingSystemAppTest(UnitTestCase):
     def __init__(self):
@@ -20,6 +20,10 @@ class OperatingSystemAppTest(UnitTestCase):
         app.BaseApp.BaseApp.setUnderTest(True)
         self._finish()
         self._createConfig()
+
+    def debugFlag(self):
+        base.StringUtils.avoidWarning(self)
+        return DEBUG
 
     def _createConfig(self):
         self._configFile = self.tempFile('satellite.conf', 'unittest.os', 'osboxx')
@@ -33,7 +37,7 @@ logger={}
         shutil.rmtree(self.tempDir('unittest.os'))
 
     def testInstall(self):
-        if debug: return
+        if DEBUG: return
         app.OperatingSystemApp.main(['-v3', '--test-target=' + self._configDir, '--test-source=' + self._configDir, '-c' + self._configDir,
             'install', 'osboxx'
             ])
@@ -46,7 +50,7 @@ logfile=/var/log/local/osboxx.log
 '''.format(), fn)
 
     def testUninstall(self):
-        if debug: return
+        if DEBUG: return
         base.FileHelper.clearDirectory(self._configDir)
         fnApp = self._configDir + os.sep + 'osboxx'
         base.StringUtils.toFile(fnApp, 'application')
@@ -58,7 +62,7 @@ logfile=/var/log/local/osboxx.log
         self.assertFileNotExists(fnApp)
 
     def testHelp(self):
-        if debug: return
+        if DEBUG: return
         app.OperatingSystemApp.main(['-v3',
             'help', 'help'
             ])
@@ -79,7 +83,7 @@ osboxx help help sub
 ''', application._resultText)
 
     def testTestAuthFile(self):
-        #if debug: return
+        if DEBUG: return
         fnPublic = '/tmp/public.keys'
         base.StringUtils.toFile(fnPublic, '''ssh-rsa AAAAB3NIH...DnrEn09rg593stn/hm0blnUDBCr8AEZIj hm@caribou
 command="/usr/local/bin/rrsync /tmp",no-X11-forwarding ssh-rsa AABCEDON9999248X...TeLwGVjM1XTw== exttmp@dragon

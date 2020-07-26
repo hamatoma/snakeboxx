@@ -86,6 +86,7 @@ class BaseApp:
     def buildConfig(self):
         '''Dummy method.
         '''
+        base.StringUtils.avoidWarning(self)
         raise Exception('BaseApp.buildConfig() is not overridden')
 
     def buildStandardConfig(self, content):
@@ -206,6 +207,8 @@ WantedBy=multi-user.target
         '''Does the real thing in the daemon (= service).
         @param reloadRequest: True: a reload request has been done
         '''
+        base.StringUtils.avoidWarning(self)
+        base.StringUtils.avoidWarning(reloadRequest)
         raise Exception('BaseApp.daemonAction() is not overridden')
 
     def getSource(self, directory, node=None):
@@ -470,6 +473,7 @@ def startApplication():
         @param serviceName: name of the service
         @return the filename
         '''
+        base.StringUtils.avoidWarning(self)
         rc = '{}/{}/reload.request'.format(tempfile.gettempdir(), serviceName)
         return rc
 
@@ -484,17 +488,17 @@ def startApplication():
         os.chmod(fn, 0o666)
         if not self._isRoot:
             count = 10 if not self.__underTest else 1
-            self._logger.log('waiting for answer (max {} sec)'.format(
-                count), base.Const.LEVEL_SUMMARY)
+            self._logger.log(
+                f'waiting for answer (max {count} sec)', base.Const.LEVEL_SUMMARY)
             for ix in range(count):
                 if not os.path.exists(fn):
-                    self._logger.log('request {}processed',
+                    self._logger.log(f'{ix+1}: request not processed',
                                      base.Const.LEVEL_SUMMARY)
                     break
                 time.sleep(1)
             if ix <= 0:
                 self._logger.error('reload request was not processed')
-            os.unlink(fn)
+            base.FileHelper.ensureFileDoesNotExist(fn)
 
     def run(self):
         '''Starts the application specific work.

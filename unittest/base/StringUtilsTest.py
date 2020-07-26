@@ -4,13 +4,17 @@ Created on 12.04.2018
 @author: hm
 '''
 from unittest.UnitTestCase import UnitTestCase
-import base.StringUtils
 import os
 import re
+import base.StringUtils
 
 DEBUG = False
 
 class StringUtilsTest(UnitTestCase):
+
+    def debugFlag(self):
+        base.StringUtils.avoidWarning(self)
+        return DEBUG
 
     def testJoin(self):
         if DEBUG: return
@@ -477,6 +481,7 @@ c=333
         #self.log('expecting x errors:')
         self.assertNone(base.StringUtils.sizeOption('min-size', 'm', '-m', errors))
         self.assertIsEqual('size cannot be empty', errors[0])
+
 
 if __name__ == '__main__':
     #import sys;sys.argv = ['', 'Test.testName']

@@ -6,13 +6,17 @@ Created on 12.04.2018
 from unittest.UnitTestCase import UnitTestCase
 import base.TextProcessor
 
-DEBUG = True
+DEBUG = False
 
 class TextProcessorTest(UnitTestCase):
 
     def __init__(self):
         UnitTestCase.__init__(self)
         self._trace = self.tempFile('rules.log', 'trace')
+
+    def debugFlag(self):
+        base.StringUtils.avoidWarning(self)
+        return DEBUG
 
     def testBasics(self):
         if DEBUG: return

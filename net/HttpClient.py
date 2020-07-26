@@ -63,8 +63,10 @@ class HttpClient:
         try:
             if method in ('POST', 'PUT'):
                 if isinstance(content, dict):
-                    content = json.dumps(
-                        content, ensure_ascii=False).encode('UTF-8')
+                    content2 = json.dumps(
+                        content, ensure_ascii=False)
+                    content = content.encode(
+                        'UTF-8') if isinstance(content2, bytes) else content2
                 if contentType is None:
                     contentType = 'application/json; charset=UTF-8' if content.startswith(
                         '{') else 'text/plain; charset=utf-8'

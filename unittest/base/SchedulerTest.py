@@ -7,6 +7,7 @@ from unittest.UnitTestCase import UnitTestCase
 import base.MemoryLogger
 import base.Scheduler
 
+DEBUG = False
 class TestTaskInfo (base.Scheduler.TaskInfo):
     def __init__(self):
         self._count = 0
@@ -14,6 +15,10 @@ class TestTaskInfo (base.Scheduler.TaskInfo):
         self._count += 1
 
 class SchedulerTest(UnitTestCase):
+
+    def debugFlag(self):
+        base.StringUtils.avoidWarning(self)
+        return DEBUG
 
     def testBasics(self):
         logger = base.MemoryLogger.MemoryLogger()

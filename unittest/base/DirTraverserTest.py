@@ -17,7 +17,7 @@ import base.StringUtils
 import base.FileHelper
 import base.MemoryLogger
 
-debug = False
+DEBUG = False
 
 class DirTraverserTest(UnitTestCase):
     def __init__(self):
@@ -44,8 +44,12 @@ link.x.conf|->tree2/x.conf
     def _finish(self):
         shutil.rmtree(self.tempDir('unittest.dtrav'))
 
+    def debugFlag(self):
+        base.StringUtils.avoidWarning(self)
+        return DEBUG
+
     def testAsListAll(self):
-        if debug: return
+        if DEBUG: return
         traverser = base.DirTraverser.DirTraverser(self._base)
         files = ' ' + ' '.join(traverser.asList()).replace(os.sep, '/') + ' '
         self.assertIsEqual(files.count(' '), 13+1)
@@ -64,7 +68,7 @@ link.x.conf|->tree2/x.conf
         self.assertTrue(files.find('link.x.conf ') >= 0)
 
     def testAsListFilePattern(self):
-        if debug: return
+        if DEBUG: return
         traverser = base.DirTraverser.DirTraverser(self._base, filePattern="*.txt", dirPattern="*.txt")
         files = ' ' + ' '.join(traverser.asList()).replace(os.sep, '/') + ' '
         self.assertIsEqual(files.count(' '), 6+1)
@@ -82,7 +86,7 @@ link.x.conf|->tree2/x.conf
         self.assertTrue(files.find('tree.txt/x.conf/depth2.txt') >= 0)
 
     def testAsListExclude(self):
-        if debug: return
+        if DEBUG: return
         traverser = base.DirTraverser.DirTraverser(self._base, reDirExcludes='.txt|2', reFileExcludes='.txt|2')
         files = ' ' +  ' '.join(traverser.asList()).replace(os.sep, '/') + ' '
         self.assertIsEqual(files.count(' '), 4+1)
@@ -92,7 +96,7 @@ link.x.conf|->tree2/x.conf
         self.assertTrue(files.find('link.x.conf ') >= 0)
 
     def testAsListFileFileTypeDir(self):
-        if debug: return
+        if DEBUG: return
         traverser = base.DirTraverser.DirTraverser(self._base, fileType='d')
         files = ' ' + ' '.join(traverser.asList()).replace(os.sep, '/') + ' '
         self.assertIsEqual(files.count(' '), 4+1)
@@ -102,7 +106,7 @@ link.x.conf|->tree2/x.conf
         self.assertTrue(files.find('tree.txt/x.conf ') >= 0)
 
     def testAsListFileTypeFile(self):
-        if debug: return
+        if DEBUG: return
         traverser = base.DirTraverser.DirTraverser(self._base, fileType='f')
         files = ' ' + ' '.join(traverser.asList()).replace(os.sep, '/') + ' '
         self.assertIsEqual(files.count(' '), 7+1)
@@ -115,7 +119,7 @@ link.x.conf|->tree2/x.conf
         self.assertTrue(files.find('tree.txt/x.conf/depth2.txt') >= 0)
 
     def testAsListFileTypeLink(self):
-        if debug: return
+        if DEBUG: return
         traverser = base.DirTraverser.DirTraverser(self._base, fileType='l')
         files = ' ' + ' '.join(traverser.asList()).replace(os.sep, '/') + ' '
         self.assertIsEqual(files.count(' '), 2+1)
@@ -123,7 +127,7 @@ link.x.conf|->tree2/x.conf
         self.assertTrue(files.find('link.x.conf ') >= 0)
 
     def testAsListDepth(self):
-        if debug: return
+        if DEBUG: return
         traverser = base.DirTraverser.DirTraverser(self._base, minDepth=1, maxDepth=1)
         files = ' ' + ' '.join(traverser.asList()).replace(os.sep, '/') + ' '
         self.assertIsEqual(files.count(' '), 6+1)
@@ -135,7 +139,7 @@ link.x.conf|->tree2/x.conf
         self.assertTrue(files.find(' tree.txt/x.conf ') >= 0)
 
     def testAsListMaxYields(self):
-        if debug: return
+        if DEBUG: return
         traverser = base.DirTraverser.DirTraverser(self._base, maxYields=4)
         files = ' ' +  ' '.join(traverser.asList()).replace(os.sep, '/') + ' '
         self.assertIsEqual(files.count(' '), 4+1)
@@ -145,7 +149,7 @@ link.x.conf|->tree2/x.conf
         self.assertTrue(files.find(' tree2 ') >= 0)
 
     def testAsListYoungerThan(self):
-        #if debug: return
+        #if DEBUG: return
         date = datetime.datetime.strptime('2020-04-05 11:22:34', '%Y-%m-%d %H:%M:%S')
         traverser = base.DirTraverser.DirTraverser(self._base, youngerThan=date)
         files = ' ' +  ' '.join(traverser.asList()).replace(os.sep, '/') + ' '
@@ -165,14 +169,14 @@ link.x.conf|->tree2/x.conf
         self.assertTrue(files.find('link.x.conf ') >= 0)
 
     def testAsListOlderThan(self):
-        if debug: return
+        if DEBUG: return
         date = datetime.datetime.strptime('2020-04-05 11:22:34', '%Y-%m-%d %H:%M:%S')
         traverser = base.DirTraverser.DirTraverser(self._base)
         files = ' ' +  ' '.join(traverser.asList()).replace(os.sep, '/') + ' '
         self.assertTrue(files.find('tree1/file1.conf') >= 0)
 
     def testAsListMinSize(self):
-        if debug: return
+        if DEBUG: return
         traverser = base.DirTraverser.DirTraverser(self._base, minSize=6, fileType='f')
         files = ' ' +  ' '.join(traverser.asList()).replace(os.sep, '/')
         self.assertIsEqual(files.count(' '), 2+1)
@@ -180,7 +184,7 @@ link.x.conf|->tree2/x.conf
         self.assertTrue(files.find('tree1/file4.conf') >= 0)
 
     def testAsListMaxSize(self):
-        if debug: return
+        if DEBUG: return
         traverser = base.DirTraverser.DirTraverser(self._base, maxSize=5, fileType='f')
         files = ' ' +  ' '.join(traverser.asList()).replace(os.sep, '/') + ' '
         self.assertIsEqual(files.count(' '), 4+1)

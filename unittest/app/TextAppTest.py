@@ -22,6 +22,10 @@ class TextAppTest(UnitTestCase):
         self._finish()
         self._createConfig()
 
+    def debugFlag(self):
+        base.StringUtils.avoidWarning(self)
+        return DEBUG
+
     def _createConfig(self):
         self._configFile = self.tempFile(
             'satellite.conf', 'unittest.txt', 'textboxx')

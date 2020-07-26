@@ -13,6 +13,10 @@ DEBUG = False
 
 class HttpClientTest(UnitTestCase):
 
+    def debugFlag(self):
+        base.StringUtils.avoidWarning(self)
+        return DEBUG
+
     def testGetContent(self):
         if DEBUG: return
         logger = base.MemoryLogger.MemoryLogger()

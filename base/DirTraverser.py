@@ -130,7 +130,7 @@ class DirTraverser:
                     continue
                 if depth < self._maxDepth:
                     self._ignoredDirs -= 1
-                if self._dirPattern == None:
+                if self._dirPattern is None:
                     continue
                 if not self._findDirs:
                     continue

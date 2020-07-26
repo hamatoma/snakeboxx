@@ -23,6 +23,7 @@ class UnitTestSuite:
         self._imports = []
         self._base = '/home/ws/py/snakeboxx/'
         self._summary = []
+        self._debugList = []
 
     def addByPattern(self, relPath, pattern = r'.*[.]py$'):
         '''Adds the test cases given by a directory and a filename pattern (of modules, not test cases).
@@ -85,7 +86,10 @@ class UnitTestSuite:
             clazz.__init__(instance)
             clazz.setInTestSuite(instance, True)
             clazz.run(instance)
+            if instance.debugFlag():
+                self._debugList.append(clazz.__name__)
             self._summary.append(clazz.getSummary(instance))
+
     def summary(self):
         print('=== Summary ===')
         errors = ''
@@ -105,6 +109,10 @@ class UnitTestSuite:
         if errors != '':
             print ('=== {} units with {} assert(s) and {} error(s) in:\n{}'.format(
                 units, asserts, countErrors, errors))
+        if len(self._debugList) > 0:
+            names = 'Debug flag is set in:' + ' '.join(self._debugList)
+            print(names)
+
 
 if __name__ == '__main__':
     paths = sys.path

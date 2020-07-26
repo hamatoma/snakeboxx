@@ -12,7 +12,7 @@ import app.BaseApp
 import app.DirApp
 import base.StringUtils
 
-DEBUG = True
+DEBUG = False
 
 class DirAppTest(UnitTestCase):
     def __init__(self):
@@ -21,6 +21,10 @@ class DirAppTest(UnitTestCase):
         self._baseDir = self.tempDir('src', 'unittest.dir')
         self._finish()
         self._createConfig()
+
+    def debugFlag(self):
+        base.StringUtils.avoidWarning(self)
+        return DEBUG
 
     def _createConfig(self):
         self._configFile = self.tempFile('dirapp.conf', 'unittest.dir', 'dirboxx')
@@ -178,7 +182,7 @@ dir1/file3.txt|123|664|2020-01-22 12:04:39
         current = '\n'.join(application._resultLines)
         self.assertIsEqual('''2020.01.22 12:04:39       3 Byte dir1/file3.txt
 dir(s): 2 file(s): 1 / 3 Byte
-ignored: dir(s): 1 file(s): 2
+ignored: dir(s): 0 file(s): 2
 ''', current)
 
 if __name__ == '__main__':

@@ -118,6 +118,12 @@ creates the user (or the users).
 APP-NAME create-user std
 ''')
 
+        self._usageInfo.addMode('php-reconfigure', '''php-reconfigure [<version>]
+ Sets some values in the configuration file php.ini.
+ <version>: the PHP version to reconfigure e.g. "7.3". Default: all installed versions
+''', '''APP-NAME create-user exttmp
+APP-NAME create-user std
+''')
     def createUser(self):
         '''Create a special os user.
         '''
@@ -162,6 +168,16 @@ APP-NAME create-user std
                     self._processHelper.execute(
                         ['/usr/bin/chown', '-R', '{}.{}'.format(user, user), '/home/' + user], True)
 
+    def phpReconfigure(self):
+        '''Reconfigures PHP configuration.
+        Sets some values in the php.ini.
+        '''
+        version = self.shiftProgramArgument()
+        if not self._isRoot and not app.BaseApp.BaseApp.__underTest:
+            self.abort('be root!')
+        else:
+            pass
+
     def run(self):
         '''Implements the tasks of the application
         '''
@@ -169,6 +185,8 @@ APP-NAME create-user std
             self.createUser()
         elif self._mainMode == 'auth-keys':
             self.authKeys()
+        elif self._mainMode == 'php-reconfigure':
+            self.phpReconfigure()
         else:
             self.abort('unknown mode: ' + self._mainMode)
 

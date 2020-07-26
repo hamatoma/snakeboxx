@@ -12,7 +12,7 @@ import app.BaseApp
 import app.SatelliteApp
 import base.StringUtils
 
-debug = False
+DEBUG = False
 
 class SatelliteAppTest(UnitTestCase):
     def __init__(self):
@@ -20,6 +20,10 @@ class SatelliteAppTest(UnitTestCase):
         app.BaseApp.BaseApp.setUnderTest(True)
         self._finish()
         self._createConfig()
+
+    def debugFlag(self):
+        base.StringUtils.avoidWarning(self)
+        return DEBUG
 
     def _createConfig(self):
         self._configFile = self.tempFile('satellite.conf', 'unittest', 'satboxx')
@@ -43,7 +47,7 @@ hostname=testhost
         shutil.rmtree(self.tempDir('unittest'))
 
     def testInstall(self):
-        if debug: return
+        if DEBUG: return
         app.SatelliteApp.main(['-v3', '--test-target=' + self._configDir, '--test-source=' + self._configDir, '-c' + self._configDir,
             'install', 'satboxx'
             ])
@@ -86,7 +90,7 @@ hostname=testhost
 ''', fn)
 
     def testUninstall(self):
-        if debug: return
+        if DEBUG: return
         base.FileHelper.clearDirectory(self._configDir)
         fnService = self._configDir + os.sep + 'satboxx.service'
         fnApp = self._configDir + os.sep + 'satboxx'
@@ -101,7 +105,7 @@ hostname=testhost
         self.assertFileNotExists(fnApp)
 
     def testHelp(self):
-        if debug: return
+        if DEBUG: return
         app.SatelliteApp.main(['-v3',
             'help', 'help'
             ])
@@ -121,7 +125,7 @@ satboxx help
 satboxx help help sub''', application._resultText)
 
     def testReload(self):
-        if debug: return
+        if DEBUG: return
         self._logger.log('=== expecting 1 error...')
         app.SatelliteApp.main(['-v3',
             'reload', 'satboxx'
@@ -131,7 +135,7 @@ satboxx help help sub''', application._resultText)
         self.assertTrue(application._logger._firstErrors[0].find('not processed') > 0)
 
     def testDaemon(self):
-        if debug: return
+        if DEBUG: return
         self._createConfig()
         self._logger.log('=== expecting 4 errors...')
         app.SatelliteApp.main(['-v3', '-c' + self._configDir, '--test-target=' + self._configDir,
@@ -143,7 +147,7 @@ satboxx help help sub''', application._resultText)
             self.assertMatches(r'status 405 \[Not Allowed\]', item)
 
     def testReloadRequest(self):
-        if debug: return
+        if DEBUG: return
         app.SatelliteApp.main(['-v3',
             'reload', 'satboxx'
             ])
@@ -152,7 +156,7 @@ satboxx help help sub''', application._resultText)
         self.assertIsEqual('reload request was not processed', application._logger._firstErrors[0])
 
     def testTestFilesystem(self):
-        #if debug: return
+        #if DEBUG: return
         fn = self.tempFile('reload.request', 'satboxx')
         base.StringUtils.toFile(fn, '')
         app.SatelliteApp.main(['-v3',

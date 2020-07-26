@@ -8,8 +8,15 @@ from base.Logger import Logger
 import os
 import re
 # import from base.Logger Logger
+import base.StringUtils
+
+DEBUG = False
 
 class LoggerTest(UnitTestCase):
+
+    def debugFlag(self):
+        base.StringUtils.avoidWarning(self)
+        return DEBUG
 
     def testLogger(self):
         logFile = '/tmp/logger.log'

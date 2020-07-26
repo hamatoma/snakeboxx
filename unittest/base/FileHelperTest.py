@@ -16,7 +16,7 @@ import base.MemoryLogger
 import base.FileHelper
 import base.StringUtils
 
-DEBUG = True
+DEBUG = False
 
 class FileHelperTest(UnitTestCase):
     def __init__(self):
@@ -30,6 +30,10 @@ class FileHelperTest(UnitTestCase):
 
     def _finish(self):
         shutil.rmtree(self.tempDir(self._baseNode))
+
+    def debugFlag(self):
+        base.StringUtils.avoidWarning(self)
+        return DEBUG
 
     def checkPart(self, container, full, path, node, fn, ext):
         self.assertIsEqual(path, container['path'])
@@ -351,7 +355,7 @@ class FileHelperTest(UnitTestCase):
         self.assertIsEqual('test.txt', os.path.basename(fn))
         self.assertIsEqual('unittest.2', os.path.basename(parent))
         self.assertFileExists(parent)
-        os.rmdir(parent)
+        self.ensureFileDoesNotExist(parent)
 
     def testCreateTree(self):
         if DEBUG: return

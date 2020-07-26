@@ -12,7 +12,7 @@ import app.BaseApp
 import app.EMailApp
 import base.StringUtils
 
-debug = False
+DEBUG = False
 
 def usage(msg=None):
     base.StringUtils.avoidWarning(msg)
@@ -29,8 +29,12 @@ class EMailAppTest(UnitTestCase):
     def _finish(self):
         shutil.rmtree(self.tempDir('unittest'))
 
+    def debugFlag(self):
+        base.StringUtils.avoidWarning(self)
+        return DEBUG
+
     def testSend(self):
-        if debug: return
+        if DEBUG: return
         app.EMailApp.main(['-v3',
             'send',
             'test@hamatoma.de',
@@ -40,7 +44,7 @@ class EMailAppTest(UnitTestCase):
         #self.assertIsEqual(self._fn2, email.result())
 
     def testInstall(self):
-        if debug: return
+        if DEBUG: return
         app.EMailApp.main(['-v3', '--test-target=' + self._configDir, '--test-source=' + self._configDir, '-c' + self._configDir,
             'install', 'emailboxx'
             ])
@@ -80,7 +84,7 @@ job.clean.interval=3600
 ''', self._configDir + os.sep + 'email.conf')
 
     def testUninstall(self):
-        if debug: return
+        if DEBUG: return
         base.FileHelper.clearDirectory(self._configDir)
         fnService = self._configDir + os.sep + 'emailboxx.service'
         fnApp = self._configDir + os.sep + 'emailboxx'
@@ -95,7 +99,7 @@ job.clean.interval=3600
         self.assertFileNotExists(fnApp)
 
     def testHelp(self):
-        if debug: return
+        if DEBUG: return
         app.EMailApp.main(['-v3',
             'help', 'help'
             ])
@@ -115,7 +119,7 @@ emailboxx help
 emailboxx help help sub''', application._resultText)
 
     def testReload(self):
-        if debug: return
+        if DEBUG: return
         app.EMailApp.main(['-v3',
             'reload', 'emailboxx'
             ])
@@ -125,7 +129,8 @@ emailboxx help help sub''', application._resultText)
         self.assertFileExists('/tmp/reload.emailboxx.request')
 
     def testDaemon(self):
-        if debug: return
+        if DEBUG: return
+        self._logger.log('@tester: ensure rw permission for <temp>/emailboxx/jobs')
         directory = self.tempDir('jobs', 'emailboxx')
         base.JobController.JobController.writeJob('test', ['test@hamatoma.de'], directory, self._logger)
         app.EMailApp.main(['-v3',
@@ -135,7 +140,9 @@ emailboxx help help sub''', application._resultText)
         self.assertIsEqual(0, application._logger._errors)
 
     def testReloadRequest(self):
-        if debug: return
+        if DEBUG: return
+        self._logger.log('@precondition: ensure write permission on <tmp>/emailboxx/')
+        self._logger.log('expecting 1 trial with no success...')
         app.EMailApp.main(['-v3',
             'reload', 'emailboxx'
             ])
@@ -144,7 +151,7 @@ emailboxx help help sub''', application._resultText)
         self.assertIsEqual('reload request was not processed', application._logger._firstErrors[0])
 
     def testHandleReloadRequest(self):
-        if debug: return
+        if DEBUG: return
         fn = self.tempFile('reload.request', 'emailboxx')
         base.StringUtils.toFile(fn, '')
         app.EMailApp.main(['-v3',

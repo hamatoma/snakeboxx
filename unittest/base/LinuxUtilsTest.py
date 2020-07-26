@@ -6,7 +6,13 @@ Created on 12.04.2018
 from unittest.UnitTestCase import UnitTestCase
 import base.LinuxUtils
 
+DEBUG = False
+
 class LinuxUtilsTest(UnitTestCase):
+
+    def debugFlag(self):
+        base.StringUtils.avoidWarning(self)
+        return DEBUG
 
     def testDiskFree(self):
         infos = base.LinuxUtils.diskFree()

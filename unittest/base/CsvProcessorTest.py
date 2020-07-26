@@ -16,6 +16,10 @@ class CsvProcessorTest(UnitTestCase):
         self._fn = self.tempFile('test.csv', 'csvprocessor')
         self.buildData()
 
+    def debugFlag(self):
+        base.StringUtils.avoidWarning(self)
+        return DEBUG
+
     def buildData(self):
         base.StringUtils.toFile(self._fn, '''id,name,age
 1,Jonny,22

@@ -176,7 +176,7 @@ APP-NAME grep "[\w.+-]+@[\w.+-]+" "*.addr" --format-file="=== EMail addresses in
    if not given no backup is done: the original file is modified
   -i or --ignore-case
    the search of <key> and <anchor> is case insensitive
-''', r'''APP-NAME insert-or-replace '^\s*memory_limit\s*=' "memory_limit=2048M" "/etc/php/7.3/fmt/php.ini" --anchor=php.net/memory-limit -Y1
+''', r'''APP-NAME insert-or-replace '^\s*memory_limit\s*=' "memory_limit=2048M" "/etc/php/7.3/fmt/php.ini" -aphp.net/memory-limit
 ''')
 
         self._usageInfo.addMode('replace', r'''replace <pattern> <replacement> <file-pattern> <opts>
@@ -658,7 +658,7 @@ APP-NAME grep "[\w.+-]+@[\w.+-]+" "*.addr" --format-file="=== EMail addresses in
                 'backup', 'B', option)
             if strValue is not None:
                 toDelete.append(ix)
-                options.backupExtensions = strValue
+                options.backup = strValue
                 continue
         return options
 

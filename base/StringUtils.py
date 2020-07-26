@@ -12,6 +12,7 @@ import base.MemoryLogger
 
 # .................................1.....1....2.....2....3.....3
 REG_EXPR_DATE = re.compile(r'^(\d{4})[.-](\d\d?)[.-](\d\d?)')
+REG_EXPR_DATE2 = re.compile(r'^(\d\d?)[.](\d\d?)[.](\d{4})')
 # ...................................1.....1.2....2 a..3.....3a
 REG_EXPR_TIME = re.compile(r'^(\d\d?):(\d\d?)(?::(\d\d?))?$')
 REG_EXPR_INT = re.compile(r'^0[xX]([0-9a-fA-F]+)|0([0-7]+)|([+-]?\d+)$')
@@ -86,44 +87,6 @@ def boolOption(longName, shortName, option):
                 '{}: bool expected ("true", "false"), not "{}": '.format(longName, strValue))
     return rc
 
-
-def parseSize(size, errors):
-    '''Parses string with a filesize syntax.
-    @param size: the string with the size to process, e.g. '44kiByte'
-    @param errors: OUT: error messages will be appended to this list
-    @return: None: wrong syntax otherwise: the size as integer
-    '''
-    rc = None
-    if size == '':
-        errors.append('size cannot be empty')
-    else:
-        matcher = REG_EXPR_SIZE.match(size)
-        if matcher is None:
-            errors.append(
-                f'not a valid size {size}. Expected <number>[<unit>], e.g. 10Mi')
-        else:
-            rc = int(matcher.group(1))
-            if matcher.lastindex > 1:
-                factor = 1
-                unit = matcher.group(2).lower()
-                if unit.startswith('ki'):
-                    factor = 1024
-                elif unit.startswith('k'):
-                    factor = 1000
-                elif unit.startswith('mi'):
-                    factor = 1024 * 1024
-                elif unit.startswith('m'):
-                    factor = 1000 * 1000
-                elif unit.startswith('gi'):
-                    factor = 1024 * 1024 * 1024
-                elif unit.startswith('g'):
-                    factor = 1000 * 1000 * 1000
-                elif unit.startswith('ti'):
-                    factor = 1024 * 1024 * 1024 * 1024
-                elif unit.startswith('t'):
-                    factor = 1000 * 1000 * 1000 * 1000
-                rc *= factor
-    return rc
 
 def escChars(text):
     '''Return the text with escaped meta characters like \n, \t, \\.
@@ -399,6 +362,83 @@ def minimizeStringUtfError(line, logger=None):
             rc += minimizeStringUtfError(line[half:], logger)
     return rc
 
+def parseDateTime(text, dateOnly, errors):
+    '''Parses a string representing a date or a datetime.
+    @param text: the text to parse
+    @param dateOnly: True: only dates are allowed
+    @param errors:
+    @return: None: text is not a date
+        a DateTime instance
+    '''
+    rc = None
+    matcher = REG_EXPR_DATE.match(text)
+    if matcher is not None:
+        length = len(matcher.group(0))
+        text = text[length:]
+        if text.startswith('-') or text.startswith('T') or text.startswith(' '):
+            text = text[1:]
+        rc = datetime.datetime(int(matcher.group(1)), int(
+            matcher.group(2)), int(matcher.group(3)))
+    else:
+        matcher = REG_EXPR_DATE2.match(text)
+        if matcher is None:
+            errors.append(f'not a date: {text}')
+        else:
+            length = len(matcher.group(0))
+            text = text[length:]
+            if text.startswith('-') or text.startswith('T') or text.startswith(' '):
+                text = text[1:]
+            rc = datetime.datetime(int(matcher.group(3)), int(
+                matcher.group(2)), int(matcher.group(1)))
+    if not dateOnly and rc is not None and len(text) >= 3:
+        matcher = REG_EXPR_TIME.match(text)
+        if matcher is not None:
+            sec = 0 if matcher.lastindex < 3 else int(matcher.group(3))
+            delta = datetime.timedelta(hours=matcher.group(1), minutes=int(matcher.group(2)), seconds=sec)
+            rc = rc + delta
+            text = text[len(matcher.group(0)):]
+    if rc is not None and not text.isempty():
+        rc = None
+        errors.append(f'unexpected tail of a date: {text}')
+    return rc
+
+def parseSize(size, errors):
+    '''Parses string with a filesize syntax.
+    @param size: the string with the size to process, e.g. '44kiByte'
+    @param errors: OUT: error messages will be appended to this list
+    @return: None: wrong syntax otherwise: the size as integer
+    '''
+    rc = None
+    if size == '':
+        errors.append('size cannot be empty')
+    else:
+        matcher = REG_EXPR_SIZE.match(size)
+        if matcher is None:
+            errors.append(
+                f'not a valid size {size}. Expected <number>[<unit>], e.g. 10Mi')
+        else:
+            rc = int(matcher.group(1))
+            if matcher.lastindex > 1:
+                factor = 1
+                unit = matcher.group(2).lower()
+                if unit.startswith('ki'):
+                    factor = 1024
+                elif unit.startswith('k'):
+                    factor = 1000
+                elif unit.startswith('mi'):
+                    factor = 1024 * 1024
+                elif unit.startswith('m'):
+                    factor = 1000 * 1000
+                elif unit.startswith('gi'):
+                    factor = 1024 * 1024 * 1024
+                elif unit.startswith('g'):
+                    factor = 1000 * 1000 * 1000
+                elif unit.startswith('ti'):
+                    factor = 1024 * 1024 * 1024 * 1024
+                elif unit.startswith('t'):
+                    factor = 1000 * 1000 * 1000 * 1000
+                rc *= factor
+    return rc
 
 def privateConfig():
     '''Returns the "private" configuration.

@@ -112,7 +112,10 @@ class JobController:
             content = separator + name + suffix
             base.StringUtils.toFile(fn, content)
             fn2 = fn.replace('.xxx', '.job')
-            os.rename(fn, fn2)
+            try:
+                os.rename(fn, fn2)
+            except OSError as exc:
+                logger.error(f'cannot rename {fn} to {fn2}')
         return rc
 
 

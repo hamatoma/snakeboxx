@@ -12,6 +12,10 @@ DEBUG = False
 
 class EMailTest(UnitTestCase):
 
+    def debugFlag(self):
+        base.StringUtils.avoidWarning(self)
+        return DEBUG
+
     def testBasics(self):
         if DEBUG: return
         logger = base.MemoryLogger.MemoryLogger()

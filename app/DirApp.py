@@ -35,7 +35,7 @@ class ExtremaList:
         '''Constructor.
         @param size: maximal length of the internal list
         @param criterion: t(ime), s(ize)
-        @param descending: True: 
+        @param descending: True:
         '''
         self._list = []
         self._size = size
@@ -89,8 +89,8 @@ class DirApp(app.BaseApp.BaseApp):
         @param args: the program arguments, e.g. ['test', 'a@bc.de']
         '''
         app.BaseApp.BaseApp.__init__(self, 'DirApp', args, None, 'dirboxx')
-        self._processor = None
         self._traverser = None
+        self._processor = None
         self._hostname = None
 
     def buildConfig(self):
@@ -152,11 +152,11 @@ APP-NAME list *.txt --exclude-dirs=.git --file-type=fl --min-size=20k --younger-
         minLength = None
         for option in self._programOptions:
             value = base.StringUtils.intOption('count', None, option)
-            if value != None:
+            if value is not None:
                 count = value
                 continue
             value = base.StringUtils.intOption('min-length', None, option)
-            if value != None:
+            if value is not None:
                 minLength = value
                 continue
         errors = []
@@ -175,14 +175,14 @@ APP-NAME list *.txt --exclude-dirs=.git --file-type=fl --min-size=20k --younger-
             smallest = ExtremaList(count, 's', True)
             smallest._minLength = minLength
             for filename in self._traverser.next(self._traverser._directory, 0):
-                if oldest != None:
+                if oldest is not None:
                     oldest.merge(filename, self._traverser._statInfo)
-                if youngest != None:
+                if youngest is not None:
                     youngest.merge(filename, self._traverser._statInfo)
                 if not self._traverser._isDir:
-                    if largest != None:
+                    if largest is not None:
                         largest.merge(filename, self._traverser._statInfo)
-                    if smallest != None and (
+                    if smallest is not None and (
                             smallest._minLength is None
                             or self._traverser._statInfo.st_size >= smallest._minLength):
                         smallest.merge(filename, self._traverser._statInfo)

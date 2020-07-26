@@ -11,6 +11,8 @@ import base.MemoryLogger
 import base.JobController
 import base.StringUtils
 
+DEBUG = False
+
 class TestJobController (base.JobController.JobController):
     def __init__(self, logger):
         base.JobController.JobController.__init__(self, '/tmp/unittest/jobcontrol', 1, logger)
@@ -30,6 +32,10 @@ class JobControllerTest(UnitTestCase):
         self._logger = base.MemoryLogger.MemoryLogger(3)
         self._controller = TestJobController(self._logger)
         self._dummyFile = self._controller.jobDirectory() + os.sep + 'dummy.file'
+
+    def debugFlag(self):
+        base.StringUtils.avoidWarning(self)
+        return DEBUG
 
     def testBasics(self):
         base.JobController.JobController.writeJob('test2args', ['a1', 'a2'], self._controller.jobDirectory(), self._logger)

@@ -9,7 +9,13 @@ import base.JavaConfig
 import base.StringUtils
 import base.MemoryLogger
 
+DEBUG = False
+
 class JavaConfigTest(UnitTestCase):
+
+    def debugFlag(self):
+        base.StringUtils.avoidWarning(self)
+        return DEBUG
 
     def testBasic(self):
         logger = base.MemoryLogger.MemoryLogger()

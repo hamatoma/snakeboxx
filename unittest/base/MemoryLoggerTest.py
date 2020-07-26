@@ -6,7 +6,13 @@ Created on 12.04.2018
 from unittest.UnitTestCase import UnitTestCase
 import base.MemoryLogger
 
+DEBUG = False
+
 class MemoryLoggerTest(UnitTestCase):
+
+    def debugFlag(self):
+        base.StringUtils.avoidWarning(self)
+        return DEBUG
 
     def testBase(self):
         logger = base.MemoryLogger.MemoryLogger()
