@@ -11,9 +11,11 @@ import importlib
 
 sys.path.insert(0, '/usr/share/snakeboxx')
 
+
 class UnitTestSuite:
     '''Tests a group of test cases.
     '''
+
     def __init__(self, name):
         '''Constructor.
         @param name: name of the suite (for logging)
@@ -25,7 +27,7 @@ class UnitTestSuite:
         self._summary = []
         self._debugList = []
 
-    def addByPattern(self, relPath, pattern = r'.*[.]py$'):
+    def addByPattern(self, relPath, pattern=r'.*[.]py$'):
         '''Adds the test cases given by a directory and a filename pattern (of modules, not test cases).
         @param relPath: the directory containing the modules to test, relative to the parent of 'unittest'
         @param pattern: a regular expression for selecting the modules
@@ -59,7 +61,7 @@ class UnitTestSuite:
             if item not in self._testCases:
                 self._testCases.append(item)
 
-    def instantiate(self, clazz ):
+    def instantiate(self, clazz):
         '''Instantiate a class object given by name
         @param clazz: the classes name
         @return the instance
@@ -79,8 +81,10 @@ class UnitTestSuite:
             if not name.startswith('__'):
                 if name.find('AppTest') > 0:
                     package = 'app'
-                instance = self.instantiate('unittest.' + package + '.' + name + '.' + name)()
-                clazz = self.instantiate('unittest.' + package + '.' + name + '.' + name)
+                instance = self.instantiate(
+                    'unittest.' + package + '.' + name + '.' + name)()
+                clazz = self.instantiate(
+                    'unittest.' + package + '.' + name + '.' + name)
                 tests.append((clazz, instance))
         for (clazz, instance) in tests:
             clazz.__init__(instance)
@@ -107,11 +111,9 @@ class UnitTestSuite:
             if parts[6] != '0':
                 errors += '{}: {} '.format(parts[2][0:-1], parts[6])
         if errors != '':
-            print ('=== {} units with {} assert(s) and {} error(s) in:\n{}'.format(
+            print('=== {} units with {} assert(s) and {} error(s) in:\n{}'.format(
                 units, asserts, countErrors, errors))
-        if len(self._debugList) > 0:
-            names = 'Debug flag is set in:' + ' '.join(self._debugList)
-            print(names)
+        print('Debug flag is set in: ' + ' '.join(self._debugList))
 
 
 if __name__ == '__main__':

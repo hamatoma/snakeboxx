@@ -140,8 +140,8 @@ class TextProcessor:
         return rc
 
     def replace(self, pattern, replacement, groupMarker=None, noRegExpr=False, countHits=False,
-                wordOnly=False, ignoreCase=False):
-        '''Replaces all occurrences of what with a replacement in the current region.
+                wordOnly=False, ignoreCase=False, escActive=False):
+        r'''Replaces all occurrences of what with a replacement in the current region.
         @param pattern: a regular expression of the string to search unless noRegExpr==True:
         @param replacement: what will be replaced with this. May contain a placeholder for groups in what
         @param groupMarker: None: no group placeholder otherwise: the prefix of a group placeholder
@@ -150,6 +150,7 @@ class TextProcessor:
         @param countHits: False: the result is the number of changed lines True: the result is the number of replacements
         @param wordOnly: True: only whole words will be found. Only relevant for regular expressions
         @param ignoreCase: True: the search is not case sensitive
+        @param escActive: True: esc sequences '\n', '\r', \t', '\xXX' in replacement will be recognized
         @return: the number of replaced lines/replacements depending on countHits
         '''
         rc = 0
@@ -174,6 +175,8 @@ class TextProcessor:
                 pattern = r'\b' + pattern + r'\b'
             reWhat = re.compile(pattern, base.Const.IGNORE_CASE if ignoreCase else 0) if isinstance(
                 pattern, str) else pattern
+            if escActive:
+                replacement = base.StringUtils.unescChars(replacement)
             repl = replacement if groupMarker is None else replacement.replace(
                 groupMarker, '\\')
             for ix, line in enumerate(self._lines):

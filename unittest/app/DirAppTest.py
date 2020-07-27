@@ -157,10 +157,11 @@ dir1/file2.dat|this is in file 123456xxxxxxxxx|664|2019-01-22 12:04:39
         application = app.BaseApp.BaseApp.lastInstance()
         self.assertIsEqual(0, application._logger._errors)
         current = '\n'.join(application._resultLines)
-        self.assertIsEqual('''2020.02.29 04:24:32        <dir> dir1
-2020.01.22 02:44:32      22 Byte file1.txt
+        self.assertIsEqual('''2020.01.22 02:44:32      22 Byte file1.txt
 2019.01.22 12:04:39      31 Byte dir1/file2.dat
-dir(s): 2 file(s): 2 / 53 Byte
+2020.01.22 12:04:39      31 Byte dir1/file2.txt
+2020.01.22 12:04:39       3 Byte dir1/file3.txt
+dir(s): 2 file(s): 4 / 87 Byte
 ignored: dir(s): 0 file(s): 0
 ''', current)
 
@@ -182,11 +183,7 @@ dir1/file3.txt|123|664|2020-01-22 12:04:39
         current = '\n'.join(application._resultLines)
         self.assertIsEqual('''2020.01.22 12:04:39       3 Byte dir1/file3.txt
 dir(s): 2 file(s): 1 / 3 Byte
-<<<<<<< Upstream, based on dev_options
-ignored: dir(s): 0 file(s): 2
-=======
-ignored: dir(s): 1 file(s): 2
->>>>>>> 8257d4b V2020.07.22.00: refactoring, fixes: DirTraverser FileHelper
+ignored: dir(s): 0 file(s): 3
 ''', current)
 
 if __name__ == '__main__':

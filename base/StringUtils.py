@@ -6,6 +6,7 @@ Created: 2020.06.24
 import re
 import os
 import datetime
+import codecs
 
 import base.JavaConfig
 import base.MemoryLogger
@@ -17,6 +18,15 @@ REG_EXPR_DATE2 = re.compile(r'^(\d\d?)[.](\d\d?)[.](\d{4})')
 REG_EXPR_TIME = re.compile(r'^(\d\d?):(\d\d?)(?::(\d\d?))?$')
 REG_EXPR_INT = re.compile(r'^0[xX]([0-9a-fA-F]+)|0([0-7]+)|([+-]?\d+)$')
 REG_EXPR_SIZE = re.compile(r'^(\d+)((?:[kmgt]i?)?(?:b(?:ytes?)?)?)?$', base.Const.IGNORE_CASE)
+#REG_EXPR_ESC = re.compile(r'(\\U........|\\u....|\\x..|\\[0-7]{1,3}|\\N\{[^}]+\}|\\[\\'"abfnrtv])', base.Const.RE_UNICODE)
+REG_EXPR_ESC = re.compile(r'''(\\U[0-9a-fA-F]{8}|\\u[0-9a-fA-F]{4}|\\x[0-9a-fA-F]{2}|\\[0-7]{1,3}|\\N\{[^}]+\}|\\[\\'"abfnrtv])''', base.Const.RE_UNICODE)
+#    ( \\U........      # 8-digit hex escapes
+#    | \\u....          # 4-digit hex escapes
+#    | \\x..            # 2-digit hex escapes
+#    | \\[0-7]{1,3}     # Octal escapes
+#    | \\N\{[^}]+\}     # Unicode characters by name
+#    | \\[\\'"abfnrtv]  # Single-character escapes
+
 LOGGER = None
 
 
@@ -90,13 +100,13 @@ def boolOption(longName, shortName, option):
 
 def escChars(text):
     '''Return the text with escaped meta characters like \n, \t, \\.
+    Inversion: @see unescChars()
+    @todo: handle more cases, performance optimization
     @param text: text to convert
     @return: the text with escaped chars.
     '''
-    text = text.replace('\\', '\\\\')
-    text = text.replace('\t', '\\t')
-    text = text.replace('\n', '\\n')
-    return text
+    rc = text.replace('\\', '\\\\').replace('\n', '\\n').replace('\r', '\\r').replace('\t', '\\t').replace('\b', '\\b')
+    return rc
 
 
 def firstMatch(aList, regExpr, start=0):
@@ -362,11 +372,11 @@ def minimizeStringUtfError(line, logger=None):
             rc += minimizeStringUtfError(line[half:], logger)
     return rc
 
-def parseDateTime(text, dateOnly, errors):
+def parseDateTime(text, errors, dateOnly=False):
     '''Parses a string representing a date or a datetime.
     @param text: the text to parse
+    @param errors: IN/OUT: a list: error message will be appended here 
     @param dateOnly: True: only dates are allowed
-    @param errors:
     @return: None: text is not a date
         a DateTime instance
     '''
@@ -375,29 +385,37 @@ def parseDateTime(text, dateOnly, errors):
     if matcher is not None:
         length = len(matcher.group(0))
         text = text[length:]
-        if text.startswith('-') or text.startswith('T') or text.startswith(' '):
+        if len(text) > 0 and text[0] in ['-', '/', 'T', '\t', ' ']:
             text = text[1:]
-        rc = datetime.datetime(int(matcher.group(1)), int(
-            matcher.group(2)), int(matcher.group(3)))
+        try:
+            rc = datetime.datetime(int(matcher.group(1)), int(
+                matcher.group(2)), int(matcher.group(3)))
+            if len(text) > 0 and text[0] in ['-', '/', 'T', '\t', ' ']:
+                text = text[1:]
+        except ValueError as exc:
+            errors.append(str(exc) + ': ' + text)
     else:
         matcher = REG_EXPR_DATE2.match(text)
         if matcher is None:
             errors.append(f'not a date: {text}')
         else:
             length = len(matcher.group(0))
-            text = text[length:]
-            if text.startswith('-') or text.startswith('T') or text.startswith(' '):
-                text = text[1:]
-            rc = datetime.datetime(int(matcher.group(3)), int(
-                matcher.group(2)), int(matcher.group(1)))
+            try:
+                rc = datetime.datetime(int(matcher.group(3)), int(
+                    matcher.group(2)), int(matcher.group(1)))
+                text = text[length:]
+                if len(text) > 0 and text[0] in ['-', '/', 'T', '\t', ' ']:
+                    text = text[1:]
+            except ValueError as exc:
+                errors.append(str(exc) + ': ' + text)
     if not dateOnly and rc is not None and len(text) >= 3:
         matcher = REG_EXPR_TIME.match(text)
         if matcher is not None:
             sec = 0 if matcher.lastindex < 3 else int(matcher.group(3))
-            delta = datetime.timedelta(hours=matcher.group(1), minutes=int(matcher.group(2)), seconds=sec)
+            delta = datetime.timedelta(hours=int(matcher.group(1)), minutes=int(matcher.group(2)), seconds=sec)
             rc = rc + delta
             text = text[len(matcher.group(0)):]
-    if rc is not None and not text.isempty():
+    if rc is not None and text != '':
         rc = None
         errors.append(f'unexpected tail of a date: {text}')
     return rc
@@ -742,13 +760,15 @@ def tailOfWord(words, wordPrefix):
 
 def unescChars(text):
     '''Returns the text without escaped meta characters like \n, \t, \\.
+    Inversion: @see escChar()
     @param text: text to convert
     @return: the text with unescaped chars
     '''
-    text = text.replace('\\n', '\n')
-    text = text.replace('\\t', '\t')
-    text = text.replace('\\\\', '\\')
-    return text
+    def decode_match(match):
+        return codecs.decode(match.group(0), 'unicode-escape')
+
+    rc =  REG_EXPR_ESC.sub(decode_match, text)
+    return rc
 
 
 if __name__ == '__main__':

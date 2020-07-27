@@ -64,6 +64,21 @@ intVar = 993
 strVar = "abc $strVar"
 ''', '\n'.join(processor._lines))
 
+    def testReplaceEscActive(self):
+        #if DEBUG: return
+        content = '''123<newline>äöüß
+<esc-char>xyz
+'''
+        processor = base.TextProcessor.TextProcessor(self._logger)
+        processor.setContent(content)
+        self.assertIsEqual(1, processor.replace('<newline>', '\\n', escActive=True))
+        self.assertIsEqual(1, processor.replace('<esc-char>', '\\t\\u0045\\U00000046\\x47', escActive=True))
+        current = '\n'.join(processor._lines)
+        self.assertIsEqual('''123
+äöüß
+\tEFGxyz
+''', current)
+
     def testRuleSearchForward(self):
         if DEBUG: return
         processor = base.TextProcessor.TextProcessor(self._logger)

@@ -29,4 +29,3 @@ elif [ ! -f app/$CLAZZ.py ]; then
 else
   python3 app/$CLAZZ.py -v4 install
 fi
-  

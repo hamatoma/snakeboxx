@@ -473,18 +473,58 @@ c=333
         self.assertIsEqual('not a valid size 9Gibyt. Expected <number>[<unit>], e.g. 10Mi', errors[3])
 
     def testSizeOption(self):
-        #if DEBUG: return
+        if DEBUG: return
         errors = []
         self.assertIsEqual(12, base.StringUtils.sizeOption('min-size', 'm', '-m12B', errors))
         self.assertIsEqual(6*1024*1024*1024, base.StringUtils.sizeOption('min-size', 'm', '--min-size=6GiByte', errors))
         self.assertIsEqual(0, len(errors))
-        #self.log('expecting x errors:')
         self.assertNone(base.StringUtils.sizeOption('min-size', 'm', '-m', errors))
         self.assertIsEqual('size cannot be empty', errors[0])
-<<<<<<< Upstream, based on dev_options
 
-=======
->>>>>>> 8257d4b V2020.07.22.00: refactoring, fixes: DirTraverser FileHelper
+    def testParseDateTime(self):
+        if DEBUG: return
+        errors = []
+        self.assertNotNone(base.StringUtils.parseDateTime('3.7.2020', errors, True))
+        self.assertNotNone(base.StringUtils.parseDateTime('3.7.2020', errors))
+        self.assertNotNone(base.StringUtils.parseDateTime('2020.01.31', errors, True))
+        self.assertNotNone(base.StringUtils.parseDateTime('2020.01.31', errors))
+        self.assertNotNone(base.StringUtils.parseDateTime('3.7.2020-2:04', errors))
+        self.assertNotNone(base.StringUtils.parseDateTime('2020.01.31 15:3', errors))
+        self.assertIsEqual('2020-07-03 00:00:00', str(base.StringUtils.parseDateTime('3.7.2020', errors, True)))
+        self.assertIsEqual('2020-01-02 00:00:00', str(base.StringUtils.parseDateTime('2020.1.2', errors, False)))
+        self.assertIsEqual('2020-07-03 07:03:00', str(base.StringUtils.parseDateTime('3.7.2020-7:3', errors)))
+        self.assertIsEqual('2020-01-02 22:33:44', str(base.StringUtils.parseDateTime('2020.1.2 22:33:44', errors)))
+        self.assertIsEqual(0, len(errors))
+
+    def testParseDateTimeErrors(self):
+        if DEBUG: return
+        errors = []
+        self.assertNone(base.StringUtils.parseDateTime('3.7.202O', errors))
+        self.assertIsEqual('not a date: 3.7.202O', errors[0])
+        self.assertNone(base.StringUtils.parseDateTime('x3.7.2020', errors))
+        self.assertIsEqual('not a date: x3.7.2020', errors[1])
+        self.assertNone(base.StringUtils.parseDateTime('31.6.2020', errors))
+        self.assertIsEqual('day is out of range for month: 31.6.2020', errors[2])
+        self.assertNone(base.StringUtils.parseDateTime('09.02.1980 12:44', errors, dateOnly=True))
+        self.assertIsEqual('unexpected tail of a date: 12:44', errors[3])
+        self.assertNone(base.StringUtils.parseDateTime('1998.09.02-13:49', errors, dateOnly=True))
+        self.assertIsEqual('unexpected tail of a date: 13:49', errors[4])
+
+    def testEscChar(self):
+        if DEBUG: return
+        self.assertIsEqual('\\\\', base.StringUtils.escChars('\\'))
+        self.assertIsEqual('\\n', base.StringUtils.escChars('\n'))
+        self.assertIsEqual('\\\\\\n\\r\\t\\b', base.StringUtils.escChars('\\\n\r\t\b'))
+
+    def testUnescChar(self):
+        if DEBUG: return
+        self.assertIsEqual('\\', base.StringUtils.unescChars('\\\\'))
+        self.assertIsEqual('\n', base.StringUtils.unescChars(r'\n'))
+        self.assertIsEqual('\\\n\r\t\bEäöü', base.StringUtils.unescChars(r'\\\n\r\t\b\x45äöü'))
+        self.assertIsEqual('\U00000046', base.StringUtils.unescChars(r'\U00000046'))
+        self.assertIsEqual('F', base.StringUtils.unescChars(r'\U00000046'))
+        self.assertIsEqual('\u0047', base.StringUtils.unescChars(r'\u0047'))
+        self.assertIsEqual('G', base.StringUtils.unescChars(r'\u0047'))
 
 if __name__ == '__main__':
     #import sys;sys.argv = ['', 'Test.testName']

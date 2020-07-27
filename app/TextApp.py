@@ -76,6 +76,7 @@ class OptionsReplace:
         self.prefixBackref = None
         self.wordOnly = None
         self.notRegularExpr = False
+        self.escActive = False
 
 
 class TextApp(app.BaseApp.BaseApp):
@@ -194,6 +195,8 @@ APP-NAME grep "[\w.+-]+@[\w.+-]+" "*.addr" --format-file="=== EMail addresses in
   -b<char> or --prefix-backticks:
    if given <prefix><group> will be replaced by the group
    example: opt: -b% reg-expr: "version: ([\d+.]+)" replacement: "V%1" string: "version: 4.7" result: "V4.7"
+  -e or --esc-active
+   esc sequences '\n', '\r', \t', '\xXX', '\uXXXX' and '\Uxxxxxxxx' in replacement will be recognized
   -i or --ignore-case
    the search is case insensitive
   -R or --not-regexpr
@@ -620,12 +623,14 @@ APP-NAME grep "[\w.+-]+@[\w.+-]+" "*.addr" --format-file="=== EMail addresses in
                 for error in errors:
                     self._logger.error(error)
             else:
-                self._processor = base.TextProcessor.TextProcessor(self._logger)
+                self._processor = base.TextProcessor.TextProcessor(
+                    self._logger)
                 self._traverser._findFiles = self._traverser._findLinks = True
                 self._traverser._findDirs = False
                 for filename in self._traverser.next(self._traverser._directory, 0):
                     self._processor.readFile(filename)
-                    self._processor.insertOrReplace(key, line, options.anchor, options.above)
+                    self._processor.insertOrReplace(
+                        key, line, options.anchor, options.above)
                     if self._processor._hasChanged:
                         self._processor.writeFile(filename, options.backup)
 
@@ -687,7 +692,8 @@ APP-NAME grep "[\w.+-]+@[\w.+-]+" "*.addr" --format-file="=== EMail addresses in
                     for filename in self._traverser.next(self._traverser._directory, 0):
                         self._processor.readFile(filename)
                         hits = self._processor.replace(what, replacement, options.prefixBackref,
-                                                       options.notRegularExpr, True, options.wordOnly, options.ignoreCase)
+                                                       options.notRegularExpr, True, options.wordOnly, options.ignoreCase,
+                                                       options.escActive)
                         if hits > 0:
                             self._processor.writeFile(
                                 filename, options.backupExtensions)
@@ -743,6 +749,12 @@ APP-NAME grep "[\w.+-]+@[\w.+-]+" "*.addr" --format-file="=== EMail addresses in
             if boolValue is not None:
                 toDelete.append(ix)
                 options.wordOnly = boolValue
+                continue
+            boolValue = base.StringUtils.boolOption(
+                'esc-active', 'e', option)
+            if boolValue is not None:
+                toDelete.append(ix)
+                options.escActive = boolValue
                 continue
             boolValue = base.StringUtils.boolOption(
                 'ignore-case', 'i', option)

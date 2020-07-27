@@ -283,7 +283,7 @@ version: 12.33
 bla bla
 ''')
         app.TextApp.main(['-v4',
-                          'replace', r'Version: (\d+\.\d+)', 'V%1', fn, '-i', '-b%', '-B.bak', '--backup=.bak'
+                          'replace', r'Version: (\d+\.\d+)', '\\x56%1', fn, '-i', '-b%', '-B.bak', '--backup=.bak', '-e', '--esc-active'
                           ])
         application = app.BaseApp.BaseApp.lastInstance()
         self.assertIsEqual(0, application._logger._errors)
