@@ -105,7 +105,7 @@ class StringUtilsTest(UnitTestCase):
         base.StringUtils.toFile(filename, '\t// comment\n\t   \n\n//comment2')
         self.assertFalse(base.StringUtils.hasContent(filename, '//'))
 
-        base.StringUtils.toFile(filename, '\t// comment\n\t   \n\//comment2')
+        base.StringUtils.toFile(filename, r'\t// comment\n\t   \n\//comment2')
         self.assertTrue(base.StringUtils.hasContent(filename, '#'))
         base.StringUtils.toFile(filename, '# has content!\n\na=3')
         self.assertTrue(base.StringUtils.hasContent(filename, '#'))
@@ -228,10 +228,10 @@ c=333
 
     def testToFloatAndTypeOct(self):
         if DEBUG: return
-        [value, dataType] = base.StringUtils.toFloatAndType('01234')
+        [value, dataType] = base.StringUtils.toFloatAndType('0o1234')
         self.assertIsEqual(float(0o1234), value)
         self.assertIsEqual('int', dataType)
-        [value, dataType] = base.StringUtils.toFloatAndType('012345670')
+        [value, dataType] = base.StringUtils.toFloatAndType('0o12345670')
         self.assertIsEqual(float(0o12345670), value)
         self.assertIsEqual('int', dataType)
 
@@ -294,9 +294,9 @@ c=333
 
     def testToFloatOct(self):
         if DEBUG: return
-        value = base.StringUtils.toFloat('01234')
+        value = base.StringUtils.toFloat('0o1234')
         self.assertIsEqual(float(0o1234), value)
-        value = base.StringUtils.toFloat('012345670')
+        value = base.StringUtils.toFloat('0o12345670')
         self.assertIsEqual(float(0o12345670), value)
 
     def testToFloatInt(self):
@@ -320,6 +320,16 @@ c=333
         value = base.StringUtils.toFloat('host3')
         self.assertIsEqual('float (or int or date(time)) expected, found: host3', value)
 
+    def testAsFloat(self):
+        if DEBUG: return
+        self.assertIsEqual(321.0, base.StringUtils.asFloat('321'))
+        self.assertIsEqual(-321.0, base.StringUtils.asFloat('-321'))
+        self.assertIsEqual(801.0, base.StringUtils.asFloat('0x321'))
+        self.assertIsEqual(1.35E-2, base.StringUtils.asFloat('1.35E-2'))
+        self.assertIsEqual(0.0, base.StringUtils.asFloat('0'))
+        self.assertNone(base.StringUtils.asFloat('1.35E-'))
+        self.assertIsEqual(-1.0, base.StringUtils.asFloat('', -1.0))
+
     def testAsInt(self):
         if DEBUG: return
         self.assertIsEqual(321, base.StringUtils.asInt('321'))
@@ -328,10 +338,15 @@ c=333
         self.assertIsEqual(-33, base.StringUtils.asInt('-33', 777))
         self.assertIsEqual(77, base.StringUtils.asInt('99x', 77))
         self.assertIsEqual(777, base.StringUtils.asInt('x2', 777))
+        self.assertIsEqual(-349, base.StringUtils.asInt('-349'))
+        self.assertIsEqual(+123, base.StringUtils.asInt('+123', 777))
+        self.assertNone(base.StringUtils.asInt('-3', None, signIsAllowed=False))
+        self.assertNone(base.StringUtils.asInt('+333', None, signIsAllowed=False))
+
 
     def testRegExprCompile(self):
         if DEBUG: return
-        rexpr = base.StringUtils.regExprCompile('\d', None, None, True)
+        rexpr = base.StringUtils.regExprCompile(r'\d', None, None, True)
         self.assertNotNone(rexpr.match('7'))
         rexpr = base.StringUtils.regExprCompile('Hi', None, None, False)
         self.assertNotNone(rexpr.match('hi'))
@@ -352,52 +367,6 @@ c=333
         self.assertIsEqual(1, rc[0].find('abcdefghijklmnopqrstuvwxyz01234567890'))
         self.assertIsEqual(0, rc[1].find('abcdefghijklmnopqrstuvwxyz01234567890'))
 
-    def testStringOption(self):
-        if DEBUG: return
-        self.assertIsEqual('', base.StringUtils.stringOption('a-b', 'c', '--a-b'))
-        self.assertIsEqual('TrUe', base.StringUtils.stringOption('a-b', 'c', '--a-b=TrUe'))
-        self.assertIsEqual('TrUe', base.StringUtils.stringOption('a-b', 'c', '-cTrUe'))
-        self.assertNone(base.StringUtils.stringOption('a-b', 'c', '-CTrUe'))
-        self.assertNone(base.StringUtils.stringOption('a-b', 'c', '-a-bc'))
-
-    def testBoolOption(self):
-        if DEBUG: return
-        self.assertTrue(base.StringUtils.boolOption('a-b', 'c', '--a-b'))
-        self.assertTrue(base.StringUtils.boolOption('a-b', 'c', '--a-b=TrUe'))
-        self.assertTrue(base.StringUtils.boolOption('a-b', 'c', '--a-b=t'))
-        self.assertFalse(base.StringUtils.boolOption('a-b', 'c', '--a-b=fAlSe'))
-        self.assertFalse(base.StringUtils.boolOption('a-b', 'c', '--a-b=f'))
-        self.assertTrue(base.StringUtils.boolOption('a-b', 'c', '-c'))
-        self.assertTrue(base.StringUtils.boolOption('a-b', 'c', '-ct'))
-        self.assertTrue(base.StringUtils.boolOption('a-b', 'c', '-ctrue'))
-        self.assertFalse(base.StringUtils.boolOption('a-b', 'c', '-cfAlSe'))
-        self.assertFalse(base.StringUtils.boolOption('a-b', 'c', '-cf'))
-        self.assertNone(base.StringUtils.boolOption('a-bc', 'd', '--a-b'))
-        self.assertNone(base.StringUtils.boolOption('a-bc', 'e', '-c'))
-
-    def testBoolOptionError(self):
-        if DEBUG: return
-        try:
-            base.StringUtils.boolOption('a-b', 'c', '--a-b=blub')
-            self.assertTrue(False)
-        except:
-            self.assertTrue(True)
-
-    def testIntOption(self):
-        if DEBUG: return
-        self.assertIsEqual(34, base.StringUtils.intOption('a-b', 'c', '--a-b=34'))
-        self.assertIsEqual(9, base.StringUtils.intOption('a-b', 'c', '-c9'))
-        self.assertNone(base.StringUtils.boolOption('a-bc', 'd', '--ab=4'))
-        self.assertNone(base.StringUtils.boolOption('a-bc', 'd', '-D99'))
-
-    def testIntOptionError(self):
-        if DEBUG: return
-        try:
-            base.StringUtils.intOption('a-b', 'c', '--a-b=34x')
-            self.assertTrue(False)
-        except:
-            self.assertTrue(True)
-
     def testSecondsToString(self):
         if DEBUG: return
         self.assertIsEqual('00:00:00', base.StringUtils.secondsToString(0))
@@ -408,16 +377,6 @@ c=333
         if DEBUG: return
         config = base.StringUtils.privateConfig()
         self.assertIsEqual('xyz', config.getString('StringUtil.test.entry'))
-
-    def testRegExprOption(self):
-        regExpr = base.StringUtils.regExprOption('name', 'n', r'--name=^[a-z]+$')
-        self.assertIsEqual("re.compile('^[a-z]+$', re.IGNORECASE)", str(regExpr))
-        self.assertIsEqual('jonny', regExpr.match('jonny').group(0))
-        self.assertNone(base.StringUtils.regExprOption('name', 'n', r'--iname=^[a-z]+$'))
-
-    def testRegExprOptionError(self):
-        if DEBUG: return
-        self.assertIsEqual("not a regular expression in --name: --name=^[a-z+$", base.StringUtils.regExprOption('name', 'n', r'--name=^[a-z+$'))
 
     def testIndentLines(self):
         if DEBUG: return
@@ -472,15 +431,6 @@ c=333
         self.assertNone(base.StringUtils.parseSize('9Gibyt', errors))
         self.assertIsEqual('not a valid size 9Gibyt. Expected <number>[<unit>], e.g. 10Mi', errors[3])
 
-    def testSizeOption(self):
-        if DEBUG: return
-        errors = []
-        self.assertIsEqual(12, base.StringUtils.sizeOption('min-size', 'm', '-m12B', errors))
-        self.assertIsEqual(6*1024*1024*1024, base.StringUtils.sizeOption('min-size', 'm', '--min-size=6GiByte', errors))
-        self.assertIsEqual(0, len(errors))
-        self.assertNone(base.StringUtils.sizeOption('min-size', 'm', '-m', errors))
-        self.assertIsEqual('size cannot be empty', errors[0])
-
     def testParseDateTime(self):
         if DEBUG: return
         errors = []
@@ -518,6 +468,8 @@ c=333
 
     def testUnescChar(self):
         if DEBUG: return
+        self.assertIsEqual('J', base.StringUtils.unescChars('\\x4A'))
+        self.assertIsEqual('E', base.StringUtils.unescChars('\\x45'))
         self.assertIsEqual('\\', base.StringUtils.unescChars('\\\\'))
         self.assertIsEqual('\n', base.StringUtils.unescChars(r'\n'))
         self.assertIsEqual('\\\n\r\t\bEäöü', base.StringUtils.unescChars(r'\\\n\r\t\b\x45äöü'))

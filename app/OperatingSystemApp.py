@@ -39,51 +39,38 @@ class OperatingSystemApp(app.BaseApp.BaseApp):
             return rc
         user = self.shiftProgramArgument()
         fnKeys = self.shiftProgramArgument('/tmp/public.keys')
-        home = '' if user is None else self.getTarget('/home', user)
+        home = '' if user is None else self.createPath('/home', user)
         if user is None:
             self.argumentError('missing <user>')
         elif not os.path.exists(fnKeys):
             self.argumentError('<private-key-file> not found: ' + fnKeys)
         elif not os.path.isdir(home):
-            self.argumentError('missing home: ' + home)
-        else:
-            regFilter = None
-            for option in self._programOptions:
-                result = base.StringUtils.regExprOption('filter', 'f', option)
-                if isinstance(result, str):
-                    self.argumentError(result)
-                    user = None
-                    break
-                elif result is not None:
-                    regFilter = result
-                    continue
-                self.argumentError('unknown option: ' + option)
-                user = None
-                break
-            if user is not None:
-                publicLines = base.StringUtils.fromFile(fnKeys, '\n')
-                baseSSH = home + '/.ssh'
-                base.FileHelper.ensureDirectory(baseSSH, 0o700, base.LinuxUtils.userId(user, -1),
-                                                base.LinuxUtils.groupId(user, -1))
-                fnAuth = baseSSH + '/authorized_keys'
-                authLines = [] if not os.path.exists(
-                    fnAuth) else base.StringUtils.fromFile(fnAuth, '\n')
-                regExprKey = re.compile(r'ssh-rsa (\S+) ')
-                mapAuthKeys = makeMap(authLines, regExprKey)
-                filterLines = publicLines if regFilter is None else [
-                    x for x in makeMap(publicLines, regFilter).values()]
-                filterKeys = makeMap(filterLines, regExprKey)
-                regExprLabel = re.compile(r' \S+@\S+')
-                for key in filterKeys:
-                    if key not in mapAuthKeys:
-                        line = filterKeys[key]
-                        label = (regExprLabel.search(line).group(0)
-                                 if regExprLabel.search(line) is not None else key[1:8] + '...' + key[-12:])
-                        self._logger.log('adding ' + label,
-                                         base.Const.LEVEL_SUMMARY)
-                        authLines.append(line)
-                base.StringUtils.toFile(fnAuth, authLines, '\n', fileMode=0o700,
-                                        user=base.LinuxUtils.userId(user, -1), group=base.LinuxUtils.groupId(user, -1))
+            self.argumentError(f'missing home: {home}')
+        elif self.handleOptions():
+            regFilter = self._optionProcessor.valueOf('filter')
+            publicLines = base.StringUtils.fromFile(fnKeys, '\n')
+            baseSSH = home + '/.ssh'
+            base.FileHelper.ensureDirectory(baseSSH, 0o700, base.LinuxUtils.userId(user, -1),
+                                            base.LinuxUtils.groupId(user, -1))
+            fnAuth = baseSSH + '/authorized_keys'
+            authLines = [] if not os.path.exists(
+                fnAuth) else base.StringUtils.fromFile(fnAuth, '\n')
+            regExprKey = re.compile(r'ssh-rsa (\S+) ')
+            mapAuthKeys = makeMap(authLines, regExprKey)
+            filterLines = publicLines if regFilter is None else [
+                x for x in makeMap(publicLines, regFilter).values()]
+            filterKeys = makeMap(filterLines, regExprKey)
+            regExprLabel = re.compile(r' \S+@\S+')
+            for key in filterKeys:
+                if key not in mapAuthKeys:
+                    line = filterKeys[key]
+                    label = (regExprLabel.search(line).group(0)
+                             if regExprLabel.search(line) is not None else key[1:8] + '...' + key[-12:])
+                    self._logger.log('adding ' + label,
+                                     base.Const.LEVEL_SUMMARY)
+                    authLines.append(line)
+            base.StringUtils.toFile(fnAuth, authLines, '\n', fileMode=0o700,
+                                    user=base.LinuxUtils.userId(user, -1), group=base.LinuxUtils.groupId(user, -1))
 
     def buildConfig(self):
         '''Creates an useful configuration example.
@@ -103,11 +90,7 @@ logfile=/var/log/local/{}.log
  put some public keys taken from a file into the .ssh/authorized-keys.
  <user>: the username: for that user the auth-keys will be modified
  <private-key-file>: a text file with the known public keys. Default: /tmp/public.keys
- <option>:
-  -f<pattern> or --filter=<pattern>
-   only lines with a label in <private-key-file> matching this regular expression will be respected
-   the label of the line is the last part with the form <user>@<host>
-''', '''APP-NAME -v3 auth-keys bupsupply /home/data/my.public.keys -p(^ext|@caribou)
+''', '''APP-NAME -v3 auth-keys bupsupply /home/data/my.public.keys -f(^ext|@caribou)
 APP-NAME -v3 auth-keys bupsrv --pattern=@caribou
 ''')
         self._usageInfo.addMode('create-user', '''create-user <user-name>
@@ -124,6 +107,23 @@ APP-NAME create-user std
 ''', '''APP-NAME create-user exttmp
 APP-NAME create-user std
 ''')
+
+    def buildUsageOptions(self, mode=None):
+        '''Adds the options for a given mode.
+        @param mode: None or the mode for which the option is added
+        '''
+        def add(mode, opt):
+            self._usageInfo.addModeOption(mode, opt)
+
+        if mode is None:
+            mode = self._mainMode
+        if mode == 'auth-keys':
+            add(mode, base.UsageInfo.Option('filter', 'f',
+                                            ''''only lines with a label in <private-key-file> matching this regular expression will be respected
+the label of the line is the last part with the form <user>@<host>''', 'regexpr'))
+        elif mode == 'create-user':
+            pass
+        
     def createUser(self):
         '''Create a special os user.
         '''
@@ -136,8 +136,7 @@ APP-NAME create-user std
         elif uid is not None:
             self._logger.log('user {} already exists: uid={}'.format(
                 user, uid), base.Const.LEVEL_SUMMARY)
-        else:
-
+        elif self.handleOptions():
             users = [user]
             if user == 'std':
                 users = ['bupsupply', 'extbup', 'exttmp']

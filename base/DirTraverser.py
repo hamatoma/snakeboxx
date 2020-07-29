@@ -43,7 +43,8 @@ class DirTraverser:
         '''
         self._directory = directory if directory != '' else '.'
         # +1: the preceeding slash
-        self._lengthDirectory = 0 if directory == os.sep else len(self._directory) + 1
+        self._lengthDirectory = 0 if directory == os.sep else len(
+            self._directory) + 1
         if fileType is None:
             fileType = 'dfl'
         self._findFiles = fileType.find('f') >= 0
@@ -192,13 +193,52 @@ class DirTraverser:
             self._ignoredDirs, self._ignoredFiles)
         return rc
 
-def fromOptions(pattern, options, errors):
+
+def addOptions(mode, usageInfo):
+    '''Adds the options for controlling the DirTraverser instance to a UsageInfo instance.
+    @param: the options will be assigned to this mode
+    @param: usageInfo: the options will be added to that
+    '''
+    option = base.UsageInfo.Option('dirs-pattern', 'f', 'if a directory matches this regular expression it will be not processed',
+                                   'regexpr')
+    usageInfo.addModeOption(mode, option)
+    option = base.UsageInfo.Option('dirs-excluded', 'X', 'if a directory matches this regular expression it will be not processed',
+                                   'regexpr')
+    usageInfo.addModeOption(mode, option)
+    option = base.UsageInfo.Option(
+        'file-type', 't', 'only files with this filetype will be found: d(irectory) f(ile) l(link)')
+    usageInfo.addModeOption(mode, option)
+    option = base.UsageInfo.Option(
+        'min-depth', 'm', 'only subdirectories with that (or higher) depth will be processed', 'int', 0)
+    usageInfo.addModeOption(mode, option)
+    option = base.UsageInfo.Option(
+        'min-depth', 'm', 'only subdirectories with that (or lower) depth will be processed', 'int')
+    option = base.UsageInfo.Option(
+        'max-yields', 'Y', 'only that number of matching files will be found', 'int')
+    usageInfo.addModeOption(mode, option)
+    option = base.UsageInfo.Option(
+        'min-size', 's', 'only larger files than that will be found, e.g. --min-size=2Gi', 'size', 0)
+    usageInfo.addModeOption(mode, option)
+    option = base.UsageInfo.Option(
+        'max-size', 'S', 'only smaller files than that will be found, e.g. --max-size=32kByte', 'size')
+    usageInfo.addModeOption(mode, option)
+    option = base.UsageInfo.Option(
+        'older-than', 'o', 'only files older than that will be found, e.g. --older-than=2020.7.3-4:32', 'datetime')
+    usageInfo.addModeOption(mode, option)
+    option = base.UsageInfo.Option(
+        'younger-than', 'y', 'only files younger than that will be found, e.g. --younger-than=2020.7.3-4:32', 'datetime')
+    usageInfo.addModeOption(mode, option)
+
+
+def buildFromOptions(pattern, usageInfo, mode):
     '''Returns a DirTraverser instance initialized by given options.
     @param pattern: a file pattern with path, e.g. "*.txt" or "/etc/*.conf"
-    @param options: IN/OUT: a list of program options. OUT: the "used" options are removed
-    @param errors: OUT: the list of error messages
+    @param usageInfo: contains the options built by addOptions()
+    @param mode: specifies the storage in usageInfo
     @return a DirTravers instance initiatialized by values from the options
     '''
+    def v(name):
+        return usageInfo._optionProcessors[mode].valueOf(name)
     baseDir = None
     if os.path.isdir(pattern):
         baseDir = pattern
@@ -206,82 +246,11 @@ def fromOptions(pattern, options, errors):
     else:
         baseDir = os.path.dirname(pattern)
         pattern = os.path.basename(pattern)
-    dirPattern = None
-    filesExcluded = None
-    dirsExcluded = None
-    fileType = None
-    minDepth = None
-    maxDepth = None
-    maxYields = None
-    youngerThan = None
-    olderThan = None
-    minSize = None
-    maxSize = None
     fileMustReadable = fileMustWritable = dirMustWritable = None
-    toDelete = []
-    for ix, option in enumerate(options):
-        strValue = base.StringUtils.stringOption('dir-pattern', 'd', option)
-        if strValue is not None:
-            dirPattern = strValue
-            toDelete.append(ix)
-            continue
-        strValue = base.StringUtils.regExprOption(
-            'files-excluded', 'x', option)
-        if strValue is not None:
-            filesExcluded = strValue
-            toDelete.append(ix)
-            continue
-        strValue = base.StringUtils.regExprOption('dirs-excluded', 'X', option)
-        if strValue is not None:
-            dirsExcluded = strValue
-            toDelete.append(ix)
-            continue
-        strValue = base.StringUtils.stringOption('file-type', 't', option)
-        if strValue is not None:
-            if re.match('^[dfl]+$', strValue) is None:
-                errors.append('unknown file-type {} expected: dfl')
-            else:
-                fileType = strValue
-            toDelete.append(ix)
-            continue
-        intValue = base.StringUtils.intOption('min-depth', 'm', option)
-        if intValue is not None:
-            minDepth = intValue
-            toDelete.append(ix)
-            continue
-        intValue = base.StringUtils.intOption('max-depth', 'M', option)
-        if intValue is not None:
-            maxDepth = intValue
-            toDelete.append(ix)
-            continue
-        intValue = base.StringUtils.intOption('max-yields', 'Y', option)
-        if intValue is not None:
-            maxYields = intValue
-            toDelete.append(ix)
-            continue
-        sizeValue = base.StringUtils.sizeOption('min-size', 's', option, errors)
-        if sizeValue is not None:
-            minSize = sizeValue
-            toDelete.append(ix)
-            continue
-        sizeValue = base.StringUtils.sizeOption('max-size', 's', option, errors)
-        if sizeValue is not None:
-            maxSize = sizeValue
-            toDelete.append(ix)
-            continue
-        strValue = base.StringUtils.stringOption('older-than', 'o', option)
-        if strValue is not None:
-            olderThan = _stringToDate(strValue, errors)
-            toDelete.append(ix)
-            continue
-        strValue = base.StringUtils.stringOption('younger-than', 'y', option)
-        if strValue is not None:
-            youngerThan = _stringToDate(strValue, errors)
-            toDelete.append(ix)
-            continue
-    if not errors:
-        rc = DirTraverser(baseDir, pattern, dirPattern, filesExcluded, dirsExcluded, fileType, minDepth, maxDepth,
-                          fileMustReadable, fileMustWritable, dirMustWritable, maxYields, youngerThan, olderThan, minSize, maxSize)
+    rc = DirTraverser(baseDir, pattern, v('dir-pattern'), v('files-excluded'), v('dirs-excluded'),
+                      v('file-type'), v('min-depth'), v('max-depth'),
+                      fileMustReadable, fileMustWritable, dirMustWritable,
+                      v('max-yields'), v('younger-than'), v('older-than'), v('min-size'), v('max-size'))
     return rc
 
 

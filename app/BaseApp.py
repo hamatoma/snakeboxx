@@ -16,8 +16,9 @@ import base.StringUtils
 import base.FileHelper
 import base.UsageInfo
 import base.ProcessHelper
+from base.UsageInfo import OptionProcessor
 
-VERSION = '2020.07.19.00'
+VERSION = '2020.08.07.00'
 
 
 class BaseApp:
@@ -48,8 +49,6 @@ class BaseApp:
         self._startReal = time.time()
         self._doExit = True
         self._usageInfo = None
-        self._testTarget = None
-        self._testSource = None
         self._configDirectory = '/etc/snakeboxx'
         self._mainMode = None
         self._processHelper = None
@@ -63,9 +62,9 @@ class BaseApp:
         self._usageInfo = base.UsageInfo.UsageInfo(self._logger)
         self._serviceName = None
         self._isService = isService
-        self._testSourceDir = None
-        self._testTargetDir = None
+        self._baseTestDir = None
         self._daemonSteps = 0x100000000 if not BaseApp.__underTest else 1
+        self._optionProcessor = None
 
     def abort(self, message):
         '''Displays a message and stops the programm.
@@ -93,7 +92,7 @@ class BaseApp:
         '''Writes a useful configuration into the application specific configuration file.
         @param content: the configuration content
         '''
-        fn = self.getTarget(self._configDirectory, self._appName + '.conf')
+        fn = f'{self._configDirectory}{os.sep}{self._appName}.conf'
         if os.path.exists(fn):
             fn = fn.replace('.conf', '.example')
         self._logger.log('creating {} ...'.format(fn),
@@ -104,6 +103,13 @@ class BaseApp:
         '''Builds the usage message.
         '''
         raise NotImplementedError('buildUsage() not implemented by sub class')
+
+    def buildUsageOptions(self, mode=None):
+        '''Adds the options for a given mode.
+        @param mode: None or the mode for which the option is added
+        '''
+        raise NotImplementedError(
+            'buildUsageOptions() not implemented by sub class')
 
     def buildUsageCommon(self, isService=False):
         '''Appends usage info common for all applications.
@@ -131,6 +137,29 @@ class BaseApp:
   if given: only submodes are listed if this pattern matches
 ''', 'APP-NAME help\nAPP-NAME help help sub')
 
+    def createPath(self, directory, node=None):
+        '''Returns a full name of a file or directory depending on normal or unittest environment.
+        In normal environment the result is [directory] or [directory]/[node].
+        If the the global parameter --dir-unittest exists: this option defines the base directory.
+        In this base directory will be created a subdirectory with the last node of the parameter directory.
+        For unit tests the result is taken from the global options (_testTargetDir)
+        @param directory: the original directory's name, e.g. '/etc/nginx'
+        @param node: None or the filename without path, e.g. 'nginx.conf'
+        @return: the directory name (node is None) or the filename (directory + os.sep + node)
+        '''
+        if self._baseTestDir is None:
+            rc = directory
+        else:
+            rc = self._baseTestDir + os.sep
+            rc += 'root' if directory == '/' else os.path.basename(directory)
+            base.FileHelper.ensureDirectory(rc)
+        if node is not None:
+            if rc.endswith(os.sep):
+                rc += node
+            else:
+                rc += os.sep + node
+        return rc
+
     def createSystemDScript(self, serviceName, starter, user, group, description):
         '''Creates the file controlling a systemd service.
         @param serviceName: used for syslog and environment file
@@ -139,8 +168,8 @@ class BaseApp:
         @param group: the service is started with this group
         @param description: this string is showed when the status is requestes.
         '''
-        systemDPath = self.getTarget('/etc/systemd/system', None)
-        systemdFile = '{}{}{}.service'.format(systemDPath, os.sep, serviceName)
+        systemDPath = self.createPath('/etc/systemd/system', None)
+        systemdFile = f'{systemDPath}{os.sep}{serviceName}.service'
         script = '''[Unit]
 Description={}.
 After=syslog.target
@@ -177,7 +206,7 @@ WantedBy=multi-user.target
     def defaultConfigurationFile(self):
         '''Returns the name of the file for the configuration example.
         '''
-        rc = self.getSource(self._configDirectory, self._appName + '.conf')
+        rc = f'{self._configDirectory}{os.sep}{self._appName}.conf'
         if os.path.exists(rc):
             rc = rc[0:-4] + 'example'
         return rc
@@ -210,44 +239,6 @@ WantedBy=multi-user.target
         base.StringUtils.avoidWarning(self)
         base.StringUtils.avoidWarning(reloadRequest)
         raise Exception('BaseApp.daemonAction() is not overridden')
-
-    def getSource(self, directory, node=None):
-        '''Returns the source directory specified by directory.
-        For unit tests the result is taken from the global options (_testSourceDir)
-        @param directory: the original directory's name, e.g. '/etc/snakeboxx'
-        @param node: None or the filename without path
-        @return: the directory name (node is None) or the filename (directory + os.sep + node)
-        '''
-        if self._testSourceDir is None:
-            rc = directory
-        else:
-            rc = self._testSourceDir
-        if node is not None:
-            if node.endswith(os.sep):
-                rc += node
-            else:
-                rc += os.sep + node
-        if rc.startswith('//'):
-            rc = rc[1:]
-        return rc
-
-    def getTarget(self, directory, node=None):
-        '''Returns the target directory specified by directory.
-        For unit tests the result is taken from the global options (_testTargetDir)
-        @param directory: the original directory's name, e.g. '/etc/snakeboxx'
-        @param node: None or the filename without path, e.g. 'emailapp.conf'
-        @return: the directory name (node is None) or the filename (directory + os.sep + node)
-        '''
-        if self._testTargetDir is None:
-            rc = directory
-        else:
-            rc = self._testTargetDir
-        if node is not None:
-            if node.endswith(os.sep):
-                rc += node
-            else:
-                rc += os.sep + node
-        return rc
 
     def handleCommonModes(self):
         '''Handles the modes common to all application like 'install'
@@ -294,94 +285,92 @@ WantedBy=multi-user.target
         '''Search for the global options and handles it.
         Divides the rest of arguments into _programArguments and _programOptions
         '''
-        verboseLevel = 1
-        logFile = None
         runtime = False
-        self._usageInfo.addMode('<global-option>',
-                                r'''<global-opt>:
--c<dir> or --config-directory=<dir>
- the directory containing the configuration file
--r or --run-time
- the runtime will be displayed at the end of the program
---test-source=<dir>
- a directory used for unit tests
---test-target=<dir>
- a directory used for unit tests
--v<level> or --verbose-level=<level>
- sets the amount of logs: only log messages with a level <= <level> will be displayed''',
-                                'APP-NAME -v3 -r list')
+        mode = '<global-option>'
+        self._usageInfo.addMode(mode,
+                                r'''<global-options>: this options can be used for all modes and must positioned in front of the mode.
+''', '')
+        option = base.UsageInfo.Option('config-directory', 'c', 'the directory containing the configuration file',
+                                       'string', self._configDirectory)
+        self._usageInfo.addModeOption(mode, option)
+        option = base.UsageInfo.Option('runtime', 'r', 'the runtime will be displayed at the end of the program',
+                                       'bool')
+        self._usageInfo.addModeOption(mode, option)
+        option = base.UsageInfo.Option(
+            'dir-unittest', None, 'a directory used for unit tests')
+        self._usageInfo.addModeOption(mode, option)
+        option = base.UsageInfo.Option(
+            'log-file', None, 'the file for logging messages. If empty the MemoryLogger will be used', mayBeEmpty=True)
+        self._usageInfo.addModeOption(mode, option)
+        option = base.UsageInfo.Option('verbose-level', 'v', 'sets the amount of logs: only log messages with a level <= <level> will be displayed',
+                                       'int', base.Const.LEVEL_SUMMARY)
+        self._usageInfo.addModeOption(mode, option)
+        opts = []
         while self._args and self._args[0].startswith('-'):
-            try:
-                opt = self._args[0]
-                self._args = self._args[1:]
-                strValue = base.StringUtils.stringOption(
-                    'config-directory', 'c', opt)
-                if strValue is not None:
-                    self._configDirectory = strValue
-                    continue
-                intValue = base.StringUtils.intOption(
-                    'verbose-level', 'v', opt)
-                if intValue is not None:
-                    verboseLevel = intValue
-                    continue
-                strValue = base.StringUtils.stringOption('log-file', 'l', opt)
-                if strValue is not None:
-                    logFile = strValue
-                    continue
-                boolValue = base.StringUtils.stringOption('runtime', 'r', opt)
-                if boolValue is not None:
-                    runtime = boolValue
-                    continue
-                if opt.startswith('--test-source='):
-                    self._testSourceDir = opt[14:]
-                elif opt.startswith('--test-target='):
-                    self._testTargetDir = opt[14:]
-                else:
-                    self.argumentError('unknown global option: ' + opt)
-                    break
-            except ValueError as error:
-                self.argumentError(str(error))
-        if self._args:
-            self._mainMode = self._args[0]
+            opts.append(self._args[0])
             self._args = self._args[1:]
-        for arg in self._args:
-            if arg.startswith('-'):
-                self._programOptions.append(arg)
-            else:
-                self._programArguments.append(arg)
-        # === configuration
-        fn = None
-        if self._mainMode not in ['install', 'uninstall', 'help']:
-            fn = self._configDirectory + os.sep + self._appName + '.conf'
-            if not os.path.exists(fn):
-                self.buildConfig()
-            if not os.path.exists(fn):
-                fn = None
-        self._configuration = base.JavaConfig.JavaConfig(fn, self._logger)
-        # === logger
-        if (self._appName == '!unittest' or self.__underTest) and logFile is not None:
-            self._logger._verboseLevel = 3
+        optionProcessor = self._usageInfo._optionProcessors[mode]
+        if not optionProcessor.scan(opts):
+            self.abort('error on global options')
         else:
-            if logFile is None:
-                logFile = self._configuration.getString('logfile')
-            if logFile is None:
-                logFile = '/var/log/local/{}.log'.format(self._programName)
-            # '' or '-' means memory logger
-            if logFile != '' or logFile == '-':
-                oldLogger = self._logger
-                self._logger = base.Logger.Logger(logFile, verboseLevel)
-                oldLogger.derive(self._logger)
-        base.FileHelper.setLogger(self._logger)
-        base.StringUtils.setLogger(self._logger)
-        self._processHelper = base.ProcessHelper.ProcessHelper(self._logger)
-        if not runtime:
-            self._start = None
+            self._configDirectory = optionProcessor.valueOf('config-directory')
+            self._baseTestDir = optionProcessor.valueOf('dir-unittest')
+            if self._args:
+                self._mainMode = self._args[0]
+                self._args = self._args[1:]
+            for arg in self._args:
+                if arg.startswith('-'):
+                    self._programOptions.append(arg)
+                else:
+                    self._programArguments.append(arg)
+            # === configuration
+            fn = None
+            if self._mainMode not in ['install', 'uninstall', 'help']:
+                fn = f'{self._configDirectory}{os.sep}{self._appName}.conf'
+                if not os.path.exists(fn):
+                    self.buildConfig()
+                if not os.path.exists(fn):
+                    fn = None
+            self._configuration = base.JavaConfig.JavaConfig(fn, self._logger)
+            # === logger
+            logFile = optionProcessor.valueOf('log-file')
+            if (self._appName == '!unittest' or self.__underTest) and logFile is not None:
+                self._logger._verboseLevel = base.Const.LEVEL_FINE
+            else:
+                if logFile is None:
+                    logFile = self._configuration.getString('logfile')
+                if logFile is None:
+                    logFile = f'/var/log/local/{self._programName}.log'
+                # '' or '-' means memory logger
+                if logFile != '' or logFile == '-':
+                    oldLogger = self._logger
+                    self._logger = base.Logger.Logger(
+                        logFile, optionProcessor.valueOf('verbose-level'))
+                    oldLogger.derive(self._logger)
+            base.FileHelper.setLogger(self._logger)
+            base.StringUtils.setLogger(self._logger)
+            self._processHelper = base.ProcessHelper.ProcessHelper(
+                self._logger)
+            if not optionProcessor.valueOf('runtime'):
+                self._start = None
+
+    def handleOptions(self):
+        '''Compares the current options with the specified options.
+        @return: True: success
+        '''
+        self.buildUsageOptions()
+        self._optionProcessor = processor = self._usageInfo._optionProcessors[self._mainMode]
+        rc = processor.scan(self._programOptions)
+        return rc
 
     def help(self):
         '''Prints the usage message.
         '''
         self.buildUsageCommon(self._isService)
         self.buildUsage()
+        for mode in self._usageInfo._descriptions:
+            self.buildUsageOptions(mode)
+            self._usageInfo.extendUsageInfoWithOptions(mode)
         self._usageInfo.replaceMacro('APP-NAME', self._programName)
         pattern = '' if not self._programArguments else self._programArguments[0]
         pattern2 = '' if len(
@@ -396,16 +385,15 @@ WantedBy=multi-user.target
         if not self._isRoot and not self.__underTest:
             self.argumentError('be root!')
         else:
-            configDir = self.getTarget(self._configDirectory, None)
+            configDir = self._configDirectory
             base.FileHelper.ensureDirectory(configDir)
             self.buildConfig()
-            app = self.getTarget('/usr/local/bin', self._programName)
-            source = '{}{}app{}{}.py'.format(
-                self._appBaseDirectory, os.sep, os.sep, self._mainClass)
+            app = self.createPath('/usr/local/bin', self._programName)
+            source = f'{self._appBaseDirectory}{os.sep}app{os.sep}{self._mainClass}.py'
             if os.path.exists(app):
                 base.FileHelper.ensureFileDoesNotExist(app)
             self._logger.log(
-                'creating starter {} -> {}'.format(app, source), base.Const.LEVEL_SUMMARY)
+                r'creating starter {app} -> {source}', base.Const.LEVEL_SUMMARY)
             os.symlink(source, app)
             fn = '/usr/lib/python3/dist-packages/snakeboxx.py'
             if not os.path.exists(fn):
@@ -465,7 +453,7 @@ def startApplication():
                 self._logger.log(
                     'runtime (real/process): {}/{}'.format(real, cpu), base.Const.LEVEL_SUMMARY)
         except Exception as exc:
-            self._logger.error('{}: {}'.format(str(type(exc)), str(exc)))
+            self._logger.error(f'{type(exc)}: {exc}')
             traceback.print_exc()
 
     def reloadRequestFile(self, serviceName):
@@ -530,15 +518,15 @@ def startApplication():
         if not self._isRoot and not self.__underTest:
             self.argumentError('be root!')
         else:
-            app = self.getTarget('/usr/local/bin', self._programName)
+            app = self.createPath('/usr/local/bin', self._programName)
             if os.path.exists(app):
-                self._logger.log('removing starter {} ...'.format(
-                    app), base.Const.LEVEL_SUMMARY)
+                self._logger.log(
+                    f'removing starter {app} ...', base.Const.LEVEL_SUMMARY)
                 base.FileHelper.ensureFileDoesNotExist(app)
             if self._programOptions and self._programOptions[0].startswith('--service='):
                 serviceName = self._programOptions[0][10:]
-                serviceFile = self.getTarget(
-                    '/etc/systemctl/system', '{}.service'.format(serviceName))
+                serviceFile = self.createPath(
+                    '/etc/systemctl/system', f'{serviceName}.service')
                 if os.path.exists(serviceFile):
                     self._logger.log('removing service file {} ...'.format(
                         serviceFile), base.Const.LEVEL_SUMMARY)

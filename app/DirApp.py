@@ -5,7 +5,11 @@ Created: 2020.06.24
 @author: hm
 '''
 import sys
+import os.path
+import time
+import fnmatch
 import snakeboxx
+
 
 import base.DirTraverser
 import base.FileHelper
@@ -93,6 +97,53 @@ class DirApp(app.BaseApp.BaseApp):
         self._processor = None
         self._hostname = None
 
+    def adjust(self):
+        '''Adjusts the file modifcation datetime in a given directory.
+        '''
+        self._resultLines = []
+        source = self.shiftProgramArgument()
+        target = self.shiftProgramArgument()
+        if target is None:
+            self.abort('too few arguments')
+        elif not os.path.isdir(source):
+            self.abort(f'not a directory: {source}')
+        elif not os.path.isdir(target):
+            self.abort(f'not a directory: {target}')
+        if self.handleOptions():
+            pattern = self._optionProcessor.valueOf('pattern')
+            self.adjustDir(pattern, source, target)
+
+    def adjustDir(self, pattern, source, target):
+        '''For all files in target: if a file exists in source the modification time is transfered from source to target.
+        @param source: the directory with files having the needed modification time
+        @param target: the directory with the files to change
+        @param pattern: a shell pattern for the files to process, e.g. "*.jpg"
+        '''
+        info = f'= {target}:'
+        self._resultLines.append(info)
+        self._logger.log(info, base.Const.LEVEL_DETAIL)
+        dirs = []
+        for file in os.listdir(target):
+            full = os.path.join(target, file)
+            if os.path.isdir(full):
+                if self._optionProcessor.valueOf('recursive'):
+                    dirs.append(file)
+            elif not fnmatch.fnmatch(file, pattern):
+                info = f'{file} ignored'
+                self._resultLines.append(info)
+                self._logger.log(info, base.Const.LEVEL_FINE)
+            else:
+                src = os.path.join(source, file)
+                if os.path.exists(src):
+                    timeSrc = os.stat(src).st_mtime
+                    timeTrg = os.stat(full).st_mtime
+                    base.FileHelper.setModified(full, timeSrc)
+                    info = f'{file}: {time.strftime("%Y.%m.%d-%H:%M:%S", time.localtime(timeTrg))} -> {time.strftime("%Y.%m.%d-%H:%M:%S", time.localtime(timeSrc))}'
+                    self._resultLines.append(info)
+                    self._logger.log(info, base.Const.LEVEL_LOOP)
+        for item in dirs:
+            self.adjustDir(pattern, os.path.join(source, item), os.path.join(target, item))
+
     def buildConfig(self):
         '''Creates an useful configuration example.
         '''
@@ -115,12 +166,6 @@ logfile=/var/log/local/dirboxx.log
  Find the oldest, youngest, largest, smallest files.
  <what>: 'all' or a comma separated list of requests: o or oldest, y or youngest, l or largest, s or smallest
  <directory>: the base directory for searching. Default: the current directory
- <option>:
-  all options of the DirTraverser are allowed
-  --count=<count>
-   max. count of elements in the extrema list
-  --min-length=<size>
-   relevant for "smallest": only file larger than <size> will be inspected
  ''', '''APP-NAME extrema o,y,l
 APP-NAME extrema oldest,largest /home --exclude-dir=.git
 ''')
@@ -128,11 +173,42 @@ APP-NAME extrema oldest,largest /home --exclude-dir=.git
         self._usageInfo.addMode('list', '''list [<pattern>] [<options>]
  Displays the metadata (size, date/time...) of the specified dirs/files.
  <pattern>: defines the files/dirs to display. Default: the current directory
- <option>:
-  all options of the DirTraverser are allowed
  ''', '''APP-NAME list
 APP-NAME list *.txt --exclude-dirs=.git --file-type=fl --min-size=20k --younger-than=2020.01.30-05:00:00
 ''')
+        self._usageInfo.addMode('adjust', '''adjust <source-dir> <target-dir> [<options>]
+ Search for each file in <target-dir> a file with the same name in <source-dir> and sets the modification datetime of the 2nd file to the first. 
+ <source-dir>: the modifiction datetime is taken from the file in this directory 
+ <target-dir>: files in this directory will be changed (modifiction datetime) 
+ ''', '''APP-NAME list
+APP-NAME adjust Bilder Bilder/fullsize
+APP-NAME adjust /tmp/pic/eastern /home/pictures/eastern/fullhd
+''')
+
+    def buildUsageOptions(self, mode=None):
+        '''Adds the options for a given mode.
+        @param mode: None or the mode for which the option is added
+        '''
+        def add(mode, opt):
+            self._usageInfo.addModeOption(mode, opt)
+
+        if mode is None:
+            mode = self._mainMode
+        if mode == 'describe-rules':
+            pass
+        elif mode == 'extrema':
+            base.DirTraverser.addOptions(mode, self._usageInfo)
+            add(mode, base.UsageInfo.Option('count', None,
+                                            'max. count of elements in the extrema list', 'int', 5))
+            add(mode, base.UsageInfo.Option('min-length', None,
+                                            'relevant for "smallest": only file larger than <size> will be inspected', 'int', 0))
+        elif mode == 'list':
+            base.DirTraverser.addOptions(mode, self._usageInfo)
+        elif mode == 'adjust':
+            add(mode, base.UsageInfo.Option('pattern', 'p',
+                                            'specifies the filenames to change, with shell wildcards: "*": any string "?": one char...', 'string', '*'))
+            add(mode, base.UsageInfo.Option('recursive', 'r',
+                                            'files will be processed in subdirectories', 'bool'))
 
     def extrema(self):
         '''Searches the "extremest" (youngest, oldest, ...) files.
@@ -148,24 +224,10 @@ APP-NAME list *.txt --exclude-dirs=.git --file-type=fl --min-size=20k --younger-
             else:
                 self.argumentError(
                     'unknown item in <what>: {} use oldest, youngest, largest or smallest'.format(item))
-        count = 5
-        minLength = None
-        for option in self._programOptions:
-            value = base.StringUtils.intOption('count', None, option)
-            if value is not None:
-                count = value
-                continue
-            value = base.StringUtils.intOption('min-length', None, option)
-            if value is not None:
-                minLength = value
-                continue
-        errors = []
-        self._traverser = base.DirTraverser.fromOptions(
-            directory, self._programOptions, errors)
-        if errors:
-            for error in errors:
-                self._logger.error(error)
-        else:
+        if self.handleOptions():
+            self._traverser = base.DirTraverser.buildFromOptions(
+                directory, self._usageInfo, 'extrema')
+            count = self._optionProcessor.valueOf('count')
             oldest = ExtremaList(count, 't', True) if what1.find(
                 'o') >= 0 else None
             youngest = ExtremaList(
@@ -173,7 +235,7 @@ APP-NAME list *.txt --exclude-dirs=.git --file-type=fl --min-size=20k --younger-
             largest = ExtremaList(count, 's', False) if what1.find(
                 'l') >= 0 else None
             smallest = ExtremaList(count, 's', True)
-            smallest._minLength = minLength
+            smallest._minLength = self._optionProcessor.valueOf('min-length')
             for filename in self._traverser.next(self._traverser._directory, 0):
                 if oldest is not None:
                     oldest.merge(filename, self._traverser._statInfo)
@@ -204,13 +266,9 @@ APP-NAME list *.txt --exclude-dirs=.git --file-type=fl --min-size=20k --younger-
         '''
         self._resultLines = []
         directory = self.shiftProgramArgument('.')
-        errors = []
-        self._traverser = base.DirTraverser.fromOptions(
-            directory, self._programOptions, errors)
-        if errors:
-            for error in errors:
-                self._logger.error(error)
-        else:
+        if self.handleOptions():
+            self._traverser = base.DirTraverser.buildFromOptions(
+                directory, self._usageInfo, 'list')
             for filename in self._traverser.next(self._traverser._directory, 0):
                 info = base.FileHelper.listFile(
                     self._traverser._statInfo, filename, orderDateSize=True, humanReadable=True)
@@ -224,7 +282,9 @@ APP-NAME list *.txt --exclude-dirs=.git --file-type=fl --min-size=20k --younger-
         '''Implements the tasks of the application.
         '''
         self._hostname = self._configuration.getString('hostname', '<host>')
-        if self._mainMode == 'extrema':
+        if self._mainMode == 'adjust':
+            self.adjust()
+        elif self._mainMode == 'extrema':
             self.extrema()
         elif self._mainMode == 'list':
             self.list()

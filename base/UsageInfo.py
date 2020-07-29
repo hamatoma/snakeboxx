@@ -12,32 +12,31 @@ class Option:
     '''Stores a single option.
     '''
 
-    def __init__(self, name, longName, shortName, description, example,
-                 dataType='string', mode=None, subMode=None, defaultValue=None):
+    def __init__(self, longName, shortName, description,
+                 dataType='string', defaultValue=None, mode=None, subMode=None, mayBeEmpty=False):
         '''Constructor.
-        @param name: the name of the option, used for accessing, e.g. 'dirPattern'
-        @param longName: the long option name, e.g. 'dir-pattern'. Usage: --dir-pattern=abc
         @param shortName: the short option name, e.g. 'p'. Usage: "-pabc" or "-p abc"
         @param description: the description of the option,  e.g. 'a regular expr describing the dirs to process'
         @param example: None or one or more examples of usage, 'PROG --dir-pattern=(home|opt)'
         @param dataType: 'string', 'int', 'bool', 'date', 'datetime', 'regexpr'
+        @param defaultValue: if option is not given that value will be taken
         @param mode: None or the mode @see UsageInfo
         @param subMode: None or the sub mode for @see UsageInfo
-        @param defaultValue: if option is not given that value will be taken
+        @param mayBeEmpty: False: an empty option string is an error
         '''
-        self._name = name
+        self._name = longName
         self._longName = longName
         self._shortName = shortName
         self._description = description
-        self._example = example
         self._dataType = dataType
         self._mode = mode
         self._subMode = subMode
+        self._value = False if dataType == 'bool' and defaultValue is None else defaultValue
         self._defaultValue = defaultValue
-        self._value = defaultValue
         # an OptionProcessor instance:
         self._parent = None
         self._caseSensitive = True
+        self._mayBeEmpty = mayBeEmpty
 
     def check(self, value, isShort):
         '''Checks a current option.
@@ -46,6 +45,7 @@ class Option:
         @return: True: success False: error detected
         '''
         rc = True
+        errors = []
         if self._dataType == 'int':
             self._value = base.StringUtils.asInt(value)
             if self._value is None:
@@ -53,6 +53,13 @@ class Option:
                     rc = self.error('missing int value', isShort)
                 else:
                     rc = self.error('not an integer: ' + value, isShort)
+        elif self._dataType == 'float':
+            self._value = base.StringUtils.asFloat(value)
+            if self._value is None:
+                if value in (None, ''):
+                    rc = self.error('missing float value', isShort)
+                else:
+                    rc = self.error('not a float: ' + value, isShort)
         elif self._dataType == 'bool':
             value = value.lower() if value is not None else None
             if value in (None, ''):
@@ -64,14 +71,25 @@ class Option:
             else:
                 rc = self.error('not a bool value: ' + value, isShort)
         elif self._dataType == 'regexpr':
-            rc = None
             try:
                 self._value = re.compile(
                     value, base.Const.IGNORE_CASE if self._caseSensitive else 0)
             except re.error as exc:
                 rc = self.error(str(exc), isShort)
-        elif self._dataType == 'date':
-            pass
+        elif self._dataType in ('date', 'datetime'):
+            dateOnly = self._dataType == 'date'
+            self._value = base.StringUtils.parseDateTime(
+                value, errors, dateOnly)
+            if errors:
+                rc = self.error(errors[0], isShort)
+        elif self._dataType == 'size':
+            self._value = base.StringUtils.parseSize(value, errors)
+            if errors:
+                rc = self.error(errors[0], isShort)
+        elif self._dataType == 'string':
+            self._value = value
+            if not self._mayBeEmpty and self._value == '':
+                self.error('empty string is not allowed', isShort)
         return rc
 
     def error(self, message, isShort):
@@ -80,12 +98,11 @@ class Option:
         @param isShort: True: the option is called as short option
         @return False
         '''
-        msg = 'error on option {} [-{}{}]:\n{}\n{}+++ {}'.format(
+        msg = 'error on option {} [-{}{}]:\n{}\n+++ {}'.format(
             self._name,
             '' if isShort else '-',
             self._shortName if isShort else self._longName,
             base.StringUtils.indentLines(self._description, 1),
-            '' if self._example is None else self._example + '\n',
             message)
         self._parent._logger.error(msg)
         return False
@@ -106,7 +123,7 @@ class OptionProcessor:
     def add(self, option):
         '''Adds a single option to the list.
         '''
-        if option._dataType not in ['bool', 'date', 'datetime', 'int', 'regexpr', 'string']:
+        if option._dataType not in ('bool', 'date', 'datetime', 'float', 'int', 'regexpr', 'size', 'string'):
             self._logger.error('unknown data type {} in option {}'.format(
                 option._dataType, option._name))
         option._parent = self
@@ -125,11 +142,17 @@ class OptionProcessor:
                         option._longName, option._name, opt._name))
             self._names[option._name] = option
             self._list.append(option)
+            errors = []
             if option._dataType == 'bool' and option._defaultValue is None:
                 option._defaultValue = option._value = False
-            elif option._dataType == 'int' and option._defaultValue is not None:
-                option._defaultValue = option._value = base.StringUtils.asInt(
-                    option._defaultValue)
+            elif option._dataType in ('date', 'datetime') and isinstance(option._defaultValue, str):
+                option._defaultValue = option._value = base.StringUtils.parseDateTime(
+                    option._defaultValue, errors)
+            elif option._dataType == 'size' and isinstance(option._defaultValue, str):
+                option._defaultValue = option._value = base.StringUtils.parseSize(
+                    option._defaultValue, errors)
+            if errors:
+                self._logger.error(f'option {option._name}: {errors[0]}')
 
     def checkLong(self, current):
         '''Checks a long name option.
@@ -172,7 +195,11 @@ class OptionProcessor:
         @param name: the option name
         @return: None: not found otherwise: the option with the given name
         '''
-        rc = self._names[name] if name in self._names else None
+        if name in self._names:
+            rc = self._names[name]
+        else:
+            rc = None
+            self._logger.error(f'internal error: option {name} not known')
         return rc
 
     def scan(self, programOptions):
@@ -186,6 +213,16 @@ class OptionProcessor:
                 rc = rc and self.checkLong(option[2:])
             else:
                 rc = rc and self.checkShort(option[1:])
+        return rc
+
+    def valueOf(self, name):
+        '''Returns the option value given by name.
+        @param name: the option name (long name)
+        @return: None: not found otherwise: the option value with the given name
+        '''
+        rc = None
+        if name in self._names:
+            rc = self._names[name]._value
         return rc
 
 
@@ -219,13 +256,15 @@ class UsageInfo:
         else:
             self._descriptions[mode] = description.rstrip()
             self._examples[mode] = '' if example is None else example.rstrip()
-            self._optionProcessors[mode] = OptionProcessor(self._logger)
 
     def addModeOption(self, mode, option):
         '''Adds an option related to the mode.
         @param mode: the mode
         @param option: an Option instance
         '''
+        if mode not in self._optionProcessors:
+            self._optionProcessors[mode] = base.UsageInfo.OptionProcessor(
+                self._logger)
         self._optionProcessors[mode].add(option)
 
     def addSubMode(self, mode, subMode, description, example):
@@ -316,6 +355,22 @@ class UsageInfo:
                     rc += self.indent(0, usage2._examples[subMode])
         return rc
 
+    def extendUsageInfoWithOptions(self, mode):
+        '''Adds the option descriptions to the mode description.
+        @param mode: handle that mode 
+        '''
+        if mode in self._optionProcessors:
+            self._optionProcessors[mode]._list.sort(
+                key=lambda option: option._longName)
+            for ix, option in enumerate(self._optionProcessors[mode]._list):
+                if ix == 0:
+                    self._descriptions[mode] += '\n  <options>:'
+                value = '' if option._dataType == 'bool' else f'=<{option._dataType}>'
+                info = f'--{option._longName}{value}'
+                if option._shortName:
+                    info += f' or -{option._shortName}{value}'
+                self._descriptions[mode] += f'\n  {info}:\n   {option._description}'
+
     def hasPattern(self, pattern, modes):
         '''Returns whether a mode or its description matches the [pattern].
         Side effect: modes
@@ -385,6 +440,16 @@ class UsageInfo:
                 self._examples[mode] = self._examples[mode].replace(
                     placeholder, replacement)
 
+    def valueOf(self, mode, name):
+        '''Returns the option value given by mode and name.
+        @param mode: the mode where the option is stored
+        @param name: the option name (long name)
+        @return: None: not found otherwise: the option value with the given name
+        '''
+        rc = None
+        if mode in self._optionProcessors:
+            rc = self._optionProcessors[mode].valueOf(name)
+        return rc
 
 def main(argv):
     '''Main function.

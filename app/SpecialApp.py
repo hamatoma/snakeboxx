@@ -230,11 +230,26 @@ logfile=/var/log/local/specboxx.log
  ''', '''APP-NAME geo-at
 ''')
 
+    def buildUsageOptions(self, mode=None):
+        '''Adds the options for a given mode.
+        @param mode: None or the mode for which the option is added
+        '''
+        #def add(mode, opt):
+        #    self._usageInfo.addModeOption(mode, opt)
+
+        if mode is None:
+            mode = self._mainMode
+        if mode == 'init-project':
+            pass
+        elif mode == 'geo-at':
+            pass
+
     def geoAt(self):
         '''Builds an import file for the db table geo with Austrian data.
         '''
-        builder = GeoAtBuilder(self._logger)
-        builder.buildImport()
+        if self.handleOptions():
+            builder = GeoAtBuilder(self._logger)
+            builder.buildImport()
 
     def initProject(self):
         '''Initializes a PHP project using "skeleton".
@@ -247,7 +262,7 @@ logfile=/var/log/local/specboxx.log
                 'project "skeleton" must be in the current directory')
         elif os.path.isdir(projName):
             self.argumentError('project "{}" already exists'.format(projName))
-        else:
+        elif self.handleOptions():
             fnFileStructure = 'skeleton/tools/templates/project.structure.txt'
             if not os.path.exists(fnFileStructure):
                 self.abort('missing ' + fnFileStructure)

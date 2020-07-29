@@ -12,7 +12,7 @@ import app.BaseApp
 import app.DirApp
 import base.StringUtils
 
-DEBUG = False
+DEBUG = True
 
 class DirAppTest(UnitTestCase):
     def __init__(self):
@@ -39,7 +39,7 @@ logger={}
 
     def testInstall(self):
         if DEBUG: return
-        app.DirApp.main(['-v3', '--test-target=' + self._configDir, '--test-source=' + self._configDir, '-c' + self._configDir,
+        app.DirApp.main(['-v3', f'--dir-unittest={self._configDir}', f'-c{self._configDir}',
             'install', 'osboxx'
             ])
         application = app.BaseApp.BaseApp.lastInstance()
@@ -53,9 +53,9 @@ logfile=/var/log/local/dirboxx.log
     def testUninstall(self):
         if DEBUG: return
         base.FileHelper.clearDirectory(self._configDir)
-        fnApp = self._configDir + os.sep + 'dirboxx'
-        base.StringUtils.toFile(fnApp, 'application')
-        app.DirApp.main(['-v3', '--test-target=' + self._configDir, '--test-source=' + self._configDir, '-c' + self._configDir,
+        fnApp = os.path.join(self._configDir, 'bin/dirboxx')
+        base.StringUtils.toFile(fnApp, 'application', ensureParent=True)
+        app.DirApp.main(['-v3', f'--dir-unittest={self._configDir}', f'-c{self._configDir}',
             'uninstall', '--service=dirboxx'
             ])
         email = app.BaseApp.BaseApp.lastInstance()
@@ -166,7 +166,7 @@ ignored: dir(s): 0 file(s): 0
 ''', current)
 
     def testListExample(self):
-        #if DEBUG: return
+        if DEBUG: return
         baseDir = self.tempDir('noarg', 'list')
         base.FileHelper.createFileTree('''dir1/|755|2020-02-29 04:24:32
 file1.txt|1234|664|2020-01-01 02:44:32
@@ -175,7 +175,7 @@ dir1/file3.txt|123|664|2020-01-22 12:04:39
 ''', baseDir)
         os.chdir(baseDir)
         app.DirApp.main(['-v3',
-            'list', '*.txt', '--exclude-dirs=.git', '--file-type=fl',
+            'list', '*.txt', '--dirs-excluded=.git', '--file-type=fl',
             '--max-size=5', '--younger-than=2020.01.01-05:00:00'
             ])
         application = app.BaseApp.BaseApp.lastInstance()
@@ -186,6 +186,43 @@ dir(s): 2 file(s): 1 / 3 Byte
 ignored: dir(s): 0 file(s): 3
 ''', current)
 
+    def testAdjust(self):
+        #if DEBUG: return
+        baseDir = self.tempDir('adjust', 'unittest.dir')
+        self.assertDirExists(baseDir)
+        base.FileHelper.createFileTree('''dir1/|755|2020-02-29 04:24:32
+dir1/file2.txt|this is in file 123456xxxxxxxxx|664|2020-01-22 12:04:39
+dir1/file3.jpg|123|664|2020-01-22 12:04:39
+dir1/s1/file4.txt|123|664|2020-01-22 12:06:39
+''', baseDir)
+        base.FileHelper.createFileTree('''dir2/file1.txt|1234|664|2020-02-01 02:44:32
+dir2/file2.txt|this is in file 123456xxxxxxxxx|664|2020-02-22 12:04:39
+dir2/file3.jpg|123|664|2020-02-22 12:04:39
+dir2/s1/file4.txt|123|664|2020-02-22 12:06:39
+''', baseDir)
+        os.chdir(baseDir)
+        app.DirApp.main(['-v4',
+            'adjust', os.path.join(baseDir, 'dir1'), os.path.join(baseDir, 'dir2'), '-p*.txt', '--pattern=*.txt', '-r', '--recursive'
+            ])
+        application = app.BaseApp.BaseApp.lastInstance()
+        self.assertIsEqual(0, application._logger._errors)
+        self.assertNotNone(os.stat(os.path.join(baseDir, 'dir2/file1.txt')))
+        trg = os.stat(os.path.join(baseDir, 'dir2/file2.txt')).st_mtime
+        src = os.stat(os.path.join(baseDir, 'dir1/file2.txt')).st_mtime
+        self.assertIsEqual(src, trg)
+        trg = os.stat(os.path.join(baseDir, 'dir2/file3.jpg')).st_mtime
+        src = os.stat(os.path.join(baseDir, 'dir1/file3.jpg')).st_mtime
+        self.assertFalse(src == trg)
+        trg = os.stat(os.path.join(baseDir, 'dir2/s1/file4.txt')).st_mtime
+        src = os.stat(os.path.join(baseDir, 'dir1/s1/file4.txt')).st_mtime
+        self.assertIsEqual(src, trg)
+        current = '\n'.join(application._resultLines)
+        self.assertIsEqual('''= /tmp/unittest.dir/adjust/dir2:
+file2.txt: 2020.02.22-12:04:39 -> 2020.01.22-12:04:39
+file3.jpg ignored
+= /tmp/unittest.dir/adjust/dir2/s1:
+file4.txt: 2020.02.22-12:06:39 -> 2020.01.22-12:06:39
+''', current)
 if __name__ == '__main__':
     # import sys;sys.argv = ['', 'Test.testName']
     tester = DirAppTest()

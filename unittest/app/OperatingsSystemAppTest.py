@@ -28,7 +28,7 @@ class OperatingSystemAppTest(UnitTestCase):
     def _createConfig(self):
         self._configFile = self.tempFile('satellite.conf', 'unittest.os', 'osboxx')
         self._configDir = os.path.dirname(self._configFile)
-        self._logFile = self._configDir + os.sep + 'test.log';
+        self._logFile = os.path.join(self._configDir, 'test.log')
         base.StringUtils.toFile(self._configFile, '''# created by OperatingSystemApp
 logger={}
 '''.format(self._logFile))
@@ -38,7 +38,7 @@ logger={}
 
     def testInstall(self):
         if DEBUG: return
-        app.OperatingSystemApp.main(['-v3', '--test-target=' + self._configDir, '--test-source=' + self._configDir, '-c' + self._configDir,
+        app.OperatingSystemApp.main(['-v3', f'--dir-unittest={self._configDir}', f'-c{self._configDir}',
             'install', 'osboxx'
             ])
         application = app.BaseApp.BaseApp.lastInstance()
@@ -52,9 +52,9 @@ logfile=/var/log/local/osboxx.log
     def testUninstall(self):
         if DEBUG: return
         base.FileHelper.clearDirectory(self._configDir)
-        fnApp = self._configDir + os.sep + 'osboxx'
-        base.StringUtils.toFile(fnApp, 'application')
-        app.OperatingSystemApp.main(['-v3', '--test-target=' + self._configDir, '--test-source=' + self._configDir, '-c' + self._configDir,
+        fnApp = os.path.join(self._configDir, 'bin/osboxx')
+        base.StringUtils.toFile(fnApp, 'application', ensureParent=True)
+        app.OperatingSystemApp.main(['-v3', f'--dir-unittest={self._configDir}', f'-c{self._configDir}',
             'uninstall', '--service=osboxx'
             ])
         email = app.BaseApp.BaseApp.lastInstance()
@@ -88,10 +88,10 @@ osboxx help help sub
         base.StringUtils.toFile(fnPublic, '''ssh-rsa AAAAB3NIH...DnrEn09rg593stn/hm0blnUDBCr8AEZIj hm@caribou
 command="/usr/local/bin/rrsync /tmp",no-X11-forwarding ssh-rsa AABCEDON9999248X...TeLwGVjM1XTw== exttmp@dragon
 ''')
-        home = self._configDir + '/bupsupply'
+        home = self._configDir + '/home/bupsupply'
         base.FileHelper.ensureDirectory(home)
         fnAuth = home + '/.ssh/authorized_keys'
-        app.OperatingSystemApp.main(['-v3', '--test-target=' + self._configDir,
+        app.OperatingSystemApp.main(['-v3', f'--dir-unittest={self._configDir}',
             'auth-keys', 'bupsupply'
             ])
         application = app.BaseApp.BaseApp.lastInstance()
@@ -107,7 +107,7 @@ command="/usr/local/bin/rrsync /tmp",no-X11-forwarding ssh-rsa AAAAB3NzaC1yc2EA.
 command="/usr/local/bin/rrsync /tmp",no-X11-forwarding ssh-rsa AABCEDON9999248X...TeLwGVjM1XTw== exttmp@dragon
 ''')
         base.FileHelper.ensureDirectory(self._configDir + '/bupsupply')
-        app.OperatingSystemApp.main(['-v3', '--test-target=' + self._configDir,
+        app.OperatingSystemApp.main(['-v3', f'--dir-unittest={self._configDir}',
             'auth-keys', 'bupsupply', r'--filter=\@caribou', fnPublic2
             ])
         application = app.BaseApp.BaseApp.lastInstance()

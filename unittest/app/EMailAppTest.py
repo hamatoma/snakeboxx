@@ -45,7 +45,7 @@ class EMailAppTest(UnitTestCase):
 
     def testInstall(self):
         if DEBUG: return
-        app.EMailApp.main(['-v3', '--test-target=' + self._configDir, '--test-source=' + self._configDir, '-c' + self._configDir,
+        app.EMailApp.main(['-v3', f'--dir-unittest={self._configDir}', f'-c{self._configDir}',
             'install', 'emailboxx'
             ])
         application = app.BaseApp.BaseApp.lastInstance()
@@ -68,8 +68,8 @@ Restart=always
 RestartSec=3
 [Install]
 WantedBy=multi-user.target
-''', self._configDir + os.sep + 'emailboxx.service')
-        self.assertFileExists(self._configDir + os.sep + 'emailboxx')
+''', os.path.join(self._configDir, 'system/emailboxx.service'))
+        self.assertFileExists(os.path.join(self._configDir, 'bin/emailboxx'))
         self.assertFileContent('''# created by EMailApp
 smtp.host=smtp.gmx.de
 smtp.port=587
@@ -86,11 +86,11 @@ job.clean.interval=3600
     def testUninstall(self):
         if DEBUG: return
         base.FileHelper.clearDirectory(self._configDir)
-        fnService = self._configDir + os.sep + 'emailboxx.service'
-        fnApp = self._configDir + os.sep + 'emailboxx'
-        base.StringUtils.toFile(fnService, 'service...')
-        base.StringUtils.toFile(fnApp, 'app')
-        app.EMailApp.main(['-v3', '--test-target=' + self._configDir, '--test-source=' + self._configDir, '-c' + self._configDir,
+        fnService = os.path.join(self._configDir, 'system/emailboxx.service')
+        fnApp = os.path.join(self._configDir, 'bin/emailboxx')
+        base.StringUtils.toFile(fnService, 'service...', ensureParent=True)
+        base.StringUtils.toFile(fnApp, 'app', ensureParent=True)
+        app.EMailApp.main(['-v3', f'--dir-unittest={self._configDir}', '-c{self._configDir',
             'uninstall', '--service=emailboxx'
             ])
         application = app.BaseApp.BaseApp.lastInstance()
@@ -120,13 +120,17 @@ emailboxx help help sub''', application._resultText)
 
     def testReload(self):
         if DEBUG: return
-        app.EMailApp.main(['-v3',
+        self._logger.log('@tester: /tmp/emailboxx must have rwx rights')
+        app.EMailApp.main(['-v4', '--log-file=',
             'reload', 'emailboxx'
             ])
         application = app.BaseApp.BaseApp.lastInstance()
         self.assertIsEqual(1, application._logger._errors)
         self.assertIsEqual('reload request was not processed', application._logger._firstErrors[0])
-        self.assertFileExists('/tmp/reload.emailboxx.request')
+        if os.path.exists('/tmp/reload.emailboxx.request'):
+            self.assertTrue(True)
+        else:
+            self.assertTrue(application._logger.contains('removing /tmp/emailboxx/reload.request'))
 
     def testDaemon(self):
         if DEBUG: return

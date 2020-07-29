@@ -25,6 +25,7 @@ GLOBAL_LOGGER = None
 GLOBAL_UNIT_TEST_MODE = None
 CURRDIR_PREFIX = '.' + os.sep
 
+
 class DirInfo:
     '''Stores the directory info
     '''
@@ -115,7 +116,7 @@ def createBackup(source, target=None, extension=None, expandPlaceholders=True, c
     @param target: the "safe place" of the file
     @param expandPlaceholders: True: the following placeholders in target will be expanded:
         @see expandPathPlaceholders() for more info
-    @param checkEqualNames: True: the test is done whether source != target 
+    @param checkEqualNames: True: the test is done whether source != target
     '''
     if target is None:
         if extension.find('%') >= 0:
@@ -730,6 +731,7 @@ def ensureSymbolicLink(source, target, createTarget=True):
     rc = os.path.islink(target) and os.readlink(target) == source
     return rc
 
+
 def expandPathPlaceholders(pattern, filename):
     '''Expands placeholders in a pattern with the current date time or parts of a related filename.
     @param pattern: a string with placeholders:
@@ -761,6 +763,7 @@ def expandPathPlaceholders(pattern, filename):
             value = parts['ext']
         pattern = pattern.replace(macro, value)
     return pattern
+
 
 def fileClass(path):
     '''Returns the file class of the file.

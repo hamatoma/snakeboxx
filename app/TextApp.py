@@ -12,7 +12,6 @@ import snakeboxx
 import base.CsvProcessor
 import base.TextProcessor
 import base.DirTraverser
-import base.FileHelper
 import app.BaseApp
 
 
@@ -24,9 +23,7 @@ class OptionsExecuteRules:
         '''Constructor.
         '''
         self.maxLoop = 1
-        self.aboveFilename = False
-        self.inPlace = None
-        self.outPattern = None
+        self.backup = None
 
 
 class OptionsGrep:
@@ -45,8 +42,6 @@ class OptionsGrep:
         self.formatLine = None
         self.belowContext = None
         self.aboveContext = None
-        self.formatFile = None
-        self.formatLine = None
         self.belowChars = None
         self.aboveChars = None
 
@@ -75,7 +70,7 @@ class OptionsReplace:
         self.backupExtensions = None
         self.prefixBackref = None
         self.wordOnly = None
-        self.notRegularExpr = False
+        self.rawString = False
         self.escActive = False
 
 
@@ -118,43 +113,11 @@ logfile=/var/log/local/textboxx.log
         self._usageInfo.addMode('csv-execute', '''csv-execute <commands> <file-pattern>
  Does some operations on a Comma Separated File. More info with csv-describe.
  <file-pattern>: specifies the file(s) to process.
- <opt>:
-  all options of the DirTraverser are allowed.
- ''', '''APP-NAME csv-info "address.csv" --sorted --unique --index=3,4 --cols=*name*,*city*
+''', '''APP-NAME csv-info "address.csv" --sorted --unique --index=3,4 --cols=*name*,*city*
 ''')
         self._usageInfo.addMode('grep', '''grep <reg-expr> <file-pattern> <opts>
  Searches the regular expression in files.
  <file-pattern>: specifies the file(s) to process.
- <opt>:
-  all options of the DirTraverser are allowed.
-  -a<count> or --after-chars=<count>
-   displays <count> characters after the pattern. Sets implicitly --only-matching
-  -A<count> or --after-context=<count>
-   the <count> lines after the hit will be displayed
-  -b<count> or --before-chars=<count>
-   displays <count> characters before the pattern. Sets implicitly --only-matching
-  -B<count> or --before-context=<count>
-   the <count> lines after the hit will be displayed
-  -C<count> or --context=<count>
-   the <count> lines before and after the hit will be displayed
-  -f<format> or --format-line=<format>
-   defines the display format of a hit line.
-   Placeholders: %f: full filename %p: path %n: node %# line number %t: line text %<N>: group N (N in [0..9] %%: '%' %L: newline %T: tabulator
-  -F<format> or --format-file=<format>
-   defines the display format of the prefix of a file with hits.
-   Placeholders: %f: full filename %p: path %n: node %%: '%' %L: newline %T: tabulator
-  -i or --ignore-case
-   the search is case insensitive
-  -g<N> or --group=<N>
-   displays only the N-th group of the regular expression
-  -n or --line-number
-   the line number will be displayed
-  -o or --only-matching
-   only the matching part of the line will be displayed (not the whole line)
-  -v or --invert-match
-   all lines not containing the search expression is listed
-  -w or --word-regexpr
-   only whole words will be found
 ''', r'''APP-NAME grep -n -g1 'Date:\s+(\d{4}\.\d\d\.\d\d)' "*.txt" --exclude-dirs=.git --max-depth=2
 APP-NAME grep "[\w.+-]+@[\w.+-]+" "*.addr" --format-file="=== EMail addresses in file %f:" --format-line=%l:%T%t *.addr
 ''')
@@ -165,18 +128,6 @@ APP-NAME grep "[\w.+-]+@[\w.+-]+" "*.addr" --format-file="=== EMail addresses in
  <key>: the regular expression to identify the line to replace
  <line>: the line to replace or insert
  <file-pattern>: specifies the file(s) to process.
- <opt>:
-  all options of the DirTraverser are allowed.
-  -A or --above
-   the insertion point is above the anchor 
-  -a<anchor> or --anchor=<anchor>
-   defines the insertion position if <key> is not found
-  -B<item> or --backup=<item>
-   if <item> is starting with ".": the unchanged file will be renamed with this extension
-   if <item> is a directory: the original file is moved to this directory
-   if not given no backup is done: the original file is modified
-  -i or --ignore-case
-   the search of <key> and <anchor> is case insensitive
 ''', r'''APP-NAME insert-or-replace '^\s*memory_limit\s*=' "memory_limit=2048M" "/etc/php/7.3/fmt/php.ini" -aphp.net/memory-limit
 ''')
 
@@ -186,23 +137,6 @@ APP-NAME grep "[\w.+-]+@[\w.+-]+" "*.addr" --format-file="=== EMail addresses in
  <replacement>: the <reg-expr> will be replaced by this string. Can contain backreferences: see --prefix-backref
  <file-pattern>:
   file name pattern, with wilcards *, ? [chars] and [!not chars].
- <opt>:
-  all options of the DirTraverser are allowed.
-  -B<item> or --backup=<item>
-   if <item> is starting with ".": the unchanged file will be renamed with this extension
-   if <item> is a directory: the original file is moved to this directory
-   if not given no backup is done: the original file is modified
-  -b<char> or --prefix-backticks:
-   if given <prefix><group> will be replaced by the group
-   example: opt: -b% reg-expr: "version: ([\d+.]+)" replacement: "V%1" string: "version: 4.7" result: "V4.7"
-  -e or --esc-active
-   esc sequences '\n', '\r', \t', '\xXX', '\uXXXX' and '\Uxxxxxxxx' in replacement will be recognized
-  -i or --ignore-case
-   the search is case insensitive
-  -R or --not-regexpr
-   <pattern> is a string, not a regular expression
-  -w or --word-regexpr
-   only whole words will be found
 ''', r'''APP-NAME replace "version: ([\d+.]+)" "V%1" "*.py" --prefix-backref=% -B.bak
 ''')
 
@@ -212,20 +146,7 @@ APP-NAME grep "[\w.+-]+@[\w.+-]+" "*.addr" --format-file="=== EMail addresses in
  <data-file>: a text file with lines "<string>TAB<replacement>"
  <file-pattern>:
   file name pattern, with wilcards *, ? [chars] and [!not chars].
- <opt>:
-  all options of the DirTraverser are allowed.
-  -B<item> or --backup=<item>
-   if <item> is starting with ".": the unchanged file will be renamed with this extension
-   if <item> is a directory: the original file is moved to this directory
-   if not given no backup is done: the original file is modified
-  -b<char> or --prefix-backticks:
-   if given <prefix><group> will be replaced by the group
-   example: opt: -b% reg-expr: "version: ([\d+.]+)" replacement: "V%1" string: "version: 4.7" result: "V4.7"
-  -i or --ignore-case
-   the search is case insensitive
-  -w or --word-regexpr
-   only whole words will be found
-''', r'''APP-NAME replace-string "(files|dirs): (\d+)" "%2 %1" "files: 4 dirs: 9" --prefix-backref=%
+''', r'''APP-NAME replace-many changes.txt *.html --file-type=fl --max-size=100ki
 ''')
 
         self._usageInfo.addMode('replace-string', r'''replace <pattern> <replacement> <input> <opts>
@@ -235,18 +156,108 @@ APP-NAME grep "[\w.+-]+@[\w.+-]+" "*.addr" --format-file="=== EMail addresses in
  <replacement>: the <reg-expr> will be replaced by this string. Can contain backreferences: see --prefix-backref
  <input>:
   this string will be processed
- <opt>:
-  -b<char> or --prefix-backticks:
-   if given <prefix><group> will be replaced by the group
-   example: opt: -b% reg-expr: "version: ([\d+.]+)" replacement: "V%1" string: "version: 4.7" result: "V4.7"
-  -i or --ignore-case
-   the search is case insensitive
-  -R or --not-regexpr
-   <pattern> is a string, not a regular expression
-  -w or --word-regexpr
-   only whole words will be found
 ''', r'''APP-NAME replace-string "(files|dirs): (\d+)" "%2 %1" "files: 4 dirs: 9" --prefix-backref=%
 ''')
+
+    def buildUsageOptions(self, mode=None):
+        '''Adds the options for a given mode.
+        @param mode: None or the mode for which the option is added
+        '''
+        def add(mode, opt):
+            self._usageInfo.addModeOption(mode, opt)
+
+        def addIgnore(mode):
+            add(mode, base.UsageInfo.Option('ignore-case', 'i',
+                                            'ignore case while searching', 'bool'))
+
+        def addIgnoreAndWord(mode):
+            addIgnore(mode)
+            add(mode, base.UsageInfo.Option('word-regexpr', 'w',
+                                            'only whole words will be found', 'bool'))
+
+        def addBackup(mode):
+            add(mode, base.UsageInfo.Option('backup', 'B',
+                                            '''if <item> is starting with ".": the origin file will be renamed with this extension
+if <item> is a directory: the original file is moved to this directory
+if not given no backup is done: the original file is modified'''))
+
+        def addEsc(mode):
+            add(mode, base.UsageInfo.Option('esc-active', 'e',
+                                            r"esc sequences '\n', '\r', \t', '\xXX', '\uXXXX' and '\Uxxxxxxxx' "
+                                            + 'in replacement will be recognized', 'bool'))
+
+        def addPrefixBackticks(mode):
+            add(mode, base.UsageInfo.Option('prefix-backref', 'b',
+                                            r'''if given <prefix><group> will be replaced by the group
+example: opt: -b% reg-expr: "version: ([\d+.]+)" replacement: "V%1" string: "version: 4.7" result: "V4.7"'''))
+
+        def addRawString(mode):
+            add(mode, base.UsageInfo.Option('raw-string', 'R',
+                                            '<pattern> is a string, not a regular expression', 'bool'))
+
+        def addReplace(mode, changeFile):
+            addIgnoreAndWord(mode)
+            addEsc(mode)
+            addPrefixBackticks(mode)
+            addRawString(mode)
+            if (changeFile):
+                addBackup(mode)
+
+        if mode is None:
+            mode = self._mainMode
+        if mode == 'describe-rules':
+            pass
+        elif mode == 'exec-rules':
+            base.DirTraverser.addOptions(mode, self._usageInfo)
+            addBackup(mode)
+            add(mode, base.UsageInfo.Option('max-loops', 'l',
+                                            'the process is stopped after <max-loop>*<source_lines> statements', 'int', 1))
+        elif mode == 'csv-execute':
+            base.DirTraverser.addOptions(mode, self._usageInfo)
+        elif mode == 'grep':
+            base.DirTraverser.addOptions(mode, self._usageInfo)
+            addIgnoreAndWord(mode)
+            add(mode, base.UsageInfo.Option('above-chars', 'a',
+                                            'displays <int> characters above the hit. Sets implicitly --only-matching', 'int'))
+            add(mode, base.UsageInfo.Option('below-chars', 'b',
+                                            'displays <int> characters below the hit. Sets implicitly --only-matching', 'int'))
+            add(mode, base.UsageInfo.Option('above-context', 'A',
+                                            'displays <int> lines above the hit', 'int'))
+            add(mode, base.UsageInfo.Option('below-context', 'B',
+                                            'displays <int> lines below the hit', 'int'))
+            add(mode, base.UsageInfo.Option('context', 'C',
+                                            'displays <int> lines above and below the hit', 'int'))
+            add(mode, base.UsageInfo.Option('format-line', 'f',
+                                            '''defines the display format of a hit line.
+Placeholders: %f: full filename %p: path %n: node %# line number
+%t: line text %<N>: group N (N in [0..9] %%: '%' %L: newline %T: tabulator'''))
+            add(mode, base.UsageInfo.Option('format-file', 'F',
+                                            '''defines the display format of the prefix of a file with hits.
+Placeholders: %f: full filename %p: path %n: node %%: '%' %L: newline %T: tabulator'''))
+            add(mode, base.UsageInfo.Option('group', 'g',
+                                            'displays only the <int>-th group of the regular expression', 'int'))
+            add(mode, base.UsageInfo.Option('line-number', 'n',
+                                            'the line number will be displayed for each hit', 'bool'))
+            add(mode, base.UsageInfo.Option('only-matching', 'o',
+                                            'only the matching part of the line will be displayed (not the whole line)', 'bool'))
+            add(mode, base.UsageInfo.Option('invert-match', 'v',
+                                            'all lines not containing the search expression is displayed', 'bool'))
+        elif mode == 'insert-or-replace':
+            base.DirTraverser.addOptions(mode, self._usageInfo)
+            addIgnore(mode)
+            add(mode, base.UsageInfo.Option('above', 'A',
+                                            'the insertion point is above the anchor', 'bool'))
+            add(mode, base.UsageInfo.Option('anchor', 'a',
+                                            'defines the insertion position if <key> is not found'))
+            addBackup(mode)
+        elif mode == 'replace':
+            base.DirTraverser.addOptions(mode, self._usageInfo)
+            addReplace(mode, True)
+        elif mode == 'replace-many':
+            base.DirTraverser.addOptions(mode, self._usageInfo)
+            addReplace(mode, True)
+        elif mode == 'replace-string':
+            addReplace(mode, False)
 
     def csvExecute(self):
         '''Executes a sequence of commands on CSV files.
@@ -258,20 +269,15 @@ APP-NAME grep "[\w.+-]+@[\w.+-]+" "*.addr" --format-file="=== EMail addresses in
             self.abort('too many arguments: ' + wrong)
         elif pattern is None:
             self.abort('too few arguments')
-        else:
+        elif self.handleOptions():
             self._processor = base.CsvProcessor.CsvProcessor(self._logger)
-            errors = []
-            self._traverser = base.DirTraverser.fromOptions(
-                pattern, self._programOptions, errors)
-            if errors:
-                for error in errors:
-                    self._logger.error(error)
-            else:
-                self._traverser._findFiles = self._traverser._findLinks = True
-                self._traverser._findDirs = False
-                for filename in self._traverser.next(self._traverser._directory, 0):
-                    self._processor.readFile(filename)
-                    self._processor.execute(commands)
+            self._traverser = base.DirTraverser.buildFromOptions(
+                pattern, self._usageInfo, 'csv-execute')
+            self._traverser._findFiles = self._traverser._findLinks = True
+            self._traverser._findDirs = False
+            for filename in self._traverser.next(self._traverser._directory, 0):
+                self._processor.readFile(filename)
+                self._processor.execute(commands)
 
     def describeRules(self):
         '''Displays the description of the rules.
@@ -289,21 +295,18 @@ APP-NAME grep "[\w.+-]+@[\w.+-]+" "*.addr" --format-file="=== EMail addresses in
             self.abort('too many arguments')
         elif pattern is None:
             self.abort('missing <file-pattern>')
-        else:
+        elif self.handleOptions():
             self._processor = base.TextProcessor.TextProcessor(self._logger)
-            options = self.execRulesOptions()
-            errors = []
-            self._traverser = base.DirTraverser.fromOptions(
-                pattern, self._programOptions, errors)
-            if errors:
-                for error in errors:
-                    self._logger.error(error)
-            else:
-                self._traverser._findFiles = self._traverser._findLinks = True
-                self._traverser._findDirs = False
-                for filename in self._traverser.next(self._traverser._directory, 0):
-                    base.StringUtils.avoidWarning(filename)
-                    self.execRulesOneFile(rules, options)
+            options = OptionsExecuteRules()
+            options.backup = self._optionProcessor.valueOf('backup')
+            options.maxLoop = self._optionProcessor.valueOf('max-loops')
+            self._traverser = base.DirTraverser.buildFromOptions(
+                pattern, self._usageInfo, 'exec-rules')
+            self._traverser._findFiles = self._traverser._findLinks = True
+            self._traverser._findDirs = False
+            for filename in self._traverser.next(self._traverser._directory, 0):
+                base.StringUtils.avoidWarning(filename)
+                self.execRulesOneFile(rules, options)
 
     def execRulesOneFile(self, rules, options):
         '''Executes rules for one file.
@@ -312,46 +315,9 @@ APP-NAME grep "[\w.+-]+@[\w.+-]+" "*.addr" --format-file="=== EMail addresses in
         @param options: the program options (instance of OptionsExecuteRules)
         '''
         self._processor.readFile(self._traverser._fileFullName)
-        self._processor.executeRules(rules)
+        self._processor.executeRules(rules, options.maxLoop)
         if self._processor._hasChanged:
-            if options.inPlace is not None:
-                if options.inPlace != '':
-                    src = self._traverser._fileFullName
-                    parts = base.FileHelper.splitFilename(src)
-                    parts['ext'] = options.inPlace
-                    trg = ''.join(parts)
-                    if os.path.exists(trg):
-                        os.unlink(trg)
-                    os.rename(src, trg)
-                self._processor.writeFile()
-
-    def execRulesOptions(self):
-        '''Analyses the options of the mode exec-rules.
-        @return: an instance of OptionsExecuteRules
-        '''
-        options = OptionsExecuteRules()
-        toDelete = []
-        for ix, option in enumerate(self._programOptions):
-            boolValue = base.StringUtils.boolOption(
-                'above-filename', 'a', option)
-            if boolValue is not None:
-                toDelete.append(ix)
-                options.aboveFilename = boolValue
-                continue
-            strValue = base.StringUtils.stringOption('in-place', 'i', option)
-            if strValue is not None:
-                toDelete.append(ix)
-                options.inPlace = strValue
-                continue
-            intValue = base.StringUtils.intOption('max-loop', 'l', option)
-            if intValue is not None:
-                toDelete.append(ix)
-                options.maxLoop = intValue
-                continue
-        toDelete.reverse()
-        for ix in toDelete:
-            del self._programOptions[ix]
-        return options
+            self._processor.writeFile(None, options.backup)
 
     def grep(self):
         '''Searches regular expressions in files.
@@ -361,24 +327,19 @@ APP-NAME grep "[\w.+-]+@[\w.+-]+" "*.addr" --format-file="=== EMail addresses in
         pattern = self.shiftProgramArgument()
         if pattern is None:
             self.abort('too few arguments')
-        else:
+        elif self.handleOptions():
             options = self.grepOptions()
             if options.wordOnly:
                 what = r'\b' + what + r'\b'
             regExpr = re.compile(
                 what, base.Const.IGNORE_CASE if options.ignoreCase else 0)
-            errors = []
-            self._traverser = base.DirTraverser.fromOptions(
-                pattern, self._programOptions, errors)
-            if errors:
-                for error in errors:
-                    self._logger.error(error)
-            else:
-                self._traverser._findFiles = self._traverser._findLinks = True
-                self._traverser._findDirs = False
-                for filename in self._traverser.next(self._traverser._directory, 0):
-                    if not self.grepOneFile(filename, regExpr, options):
-                        break
+            self._traverser = base.DirTraverser.buildFromOptions(
+                pattern, self._usageInfo, 'grep')
+            self._traverser._findFiles = self._traverser._findLinks = True
+            self._traverser._findDirs = False
+            for filename in self._traverser.next(self._traverser._directory, 0):
+                if not self.grepOneFile(filename, regExpr, options):
+                    break
 
     @staticmethod
     def grepFormat(theFormat, filename, text, lineNo, matcher):
@@ -513,93 +474,33 @@ APP-NAME grep "[\w.+-]+@[\w.+-]+" "*.addr" --format-file="=== EMail addresses in
         @return: the options stored in a OptionsGrep instance
         '''
         options = OptionsGrep()
-        toDelete = []
-        for ix, option in enumerate(self._programOptions):
-            boolValue = base.StringUtils.boolOption(
-                'ignore-case', 'i', option)
-            if boolValue is not None:
-                toDelete.append(ix)
-                options.ignoreCase = boolValue
-                continue
-            boolValue = base.StringUtils.boolOption(
-                'word-regexpr', 'w', option)
-            if boolValue is not None:
-                toDelete.append(ix)
-                options.wordOnly = boolValue
-                continue
-            boolValue = base.StringUtils.boolOption(
-                'line-number', 'n', option)
-            if boolValue is not None:
-                toDelete.append(ix)
-                options.lineNumber = boolValue
-                continue
-            boolValue = base.StringUtils.boolOption(
-                'invert-match', 'v', option)
-            if boolValue is not None:
-                toDelete.append(ix)
-                options.invertMatch = boolValue
-                continue
-            boolValue = base.StringUtils.boolOption(
-                'only-matching', 'o', option)
-            if boolValue is not None:
-                toDelete.append(ix)
-                options.group = 0
-                continue
-            intValue = base.StringUtils.intOption('group', 'g', option)
-            if intValue is not None:
-                toDelete.append(ix)
-                options.group = intValue
-                continue
-            intValue = base.StringUtils.intOption('below-context', 'B', option)
-            if intValue is not None:
-                toDelete.append(ix)
-                options.belowContext = intValue
-                continue
-            intValue = base.StringUtils.intOption(
-                'above-context', 'A', option)
-            if intValue is not None:
-                toDelete.append(ix)
-                options.aboveContext = intValue
-                continue
-            intValue = base.StringUtils.intOption('below-chars', 'b', option)
-            if intValue is not None:
-                toDelete.append(ix)
-                options.belowChars = intValue
-                if options.group is None:
-                    options.group = 0
-                continue
-            intValue = base.StringUtils.intOption('above-chars', 'a', option)
-            if intValue is not None:
-                toDelete.append(ix)
-                options.aboveChars = intValue
-                if options.group is None:
-                    options.group = 0
-                continue
-            intValue = base.StringUtils.intOption('context', 'C', option)
-            if intValue is not None:
-                toDelete.append(ix)
-                options.aboveContext = options.belowContext = intValue
-                continue
-            strValue = base.StringUtils.stringOption(
-                'format-line', 'f', option)
-            if strValue is not None:
-                toDelete.append(ix)
-                options.formatLine = strValue
-                continue
-            strValue = base.StringUtils.stringOption(
-                'format-file', 'F', option)
-            if strValue is not None:
-                toDelete.append(ix)
-                options.formatFile = strValue
-                continue
-        toDelete.reverse()
-        for ix in toDelete:
-            del self._programOptions[ix]
+        options.ignoreCase = self._optionProcessor.valueOf('ignore-case')
+        options.wordOnly = self._optionProcessor.valueOf('word-regexpr')
+        if self._optionProcessor.valueOf('group') is not None:
+            options.group = self._optionProcessor.valueOf('group')
+        elif self._optionProcessor.valueOf('only-matching'):
+            options.group = 0
+        options.lineNumber = self._optionProcessor.valueOf('line-number')
+        options.invertMatch = self._optionProcessor.valueOf('invert-match')
+        options.formatFile = self._optionProcessor.valueOf('format-file')
+        options.formatLine = self._optionProcessor.valueOf('format-line')
+        #if options.formatLine is None:
+        #    info = '%t' if options.group is None else f'%{options.group}'
+        #    options.formatLine = f'%f-%#:{info}' if options.lineNumber else f'%f:{info}'
+        options.belowContext = self._optionProcessor.valueOf(
+            'below-context')
+        options.aboveContext = self._optionProcessor.valueOf(
+            'above-context')
+        if options.belowContext is None and options.aboveContext is None:
+            options.belowContext = options.aboveContext = options.aboveContext = self._optionProcessor.valueOf(
+                'context')
+        options.belowChars = self._optionProcessor.valueOf('below-chars')
+        options.aboveChars = self._optionProcessor.valueOf('above-chars')
+        if (options.belowChars is not None or options.aboveChars is not None) and options.group is None:
+            options.group = 0 
         if options.formatLine is None:
-            info = '%t' if options.group is None else '%{}'.format(
-                options.group)
-            options.formatLine = (
-                '%f-%#:' if options.lineNumber else '%f:') + info
+            info = '%t' if options.group is None else f'%{options.group}'
+            options.formatLine = f'%f-%#:{info}' if options.lineNumber else f'%f:{info}'
         return options
 
     def insertOrReplace(self):
@@ -611,61 +512,26 @@ APP-NAME grep "[\w.+-]+@[\w.+-]+" "*.addr" --format-file="=== EMail addresses in
         pattern = self.shiftProgramArgument()
         if pattern is None:
             self.abort('too few arguments')
-        else:
-            options = self.insertOrReplaceOptions()
+        elif self.handleOptions():
+            options = OptionsInsertOrReplace()
+            options.ignoreCase = self._optionProcessor.valueOf('ignore-case')
+            options.anchor = self._optionProcessor.valueOf('anchor')
+            options.above = self._optionProcessor.valueOf('above')
+            options.backup = self._optionProcessor.valueOf('backup')
             if options.ignoreCase and options.anchor is not None:
                 options.anchor = re.compile(
                     options.anchor.pattern, base.Const.IGNORE_CASE)
-            errors = []
-            self._traverser = base.DirTraverser.fromOptions(
-                pattern, self._programOptions, errors)
-            if errors:
-                for error in errors:
-                    self._logger.error(error)
-            else:
-                self._processor = base.TextProcessor.TextProcessor(
-                    self._logger)
-                self._traverser._findFiles = self._traverser._findLinks = True
-                self._traverser._findDirs = False
-                for filename in self._traverser.next(self._traverser._directory, 0):
-                    self._processor.readFile(filename)
-                    self._processor.insertOrReplace(
-                        key, line, options.anchor, options.above)
-                    if self._processor._hasChanged:
-                        self._processor.writeFile(filename, options.backup)
-
-    def insertOrReplaceOptions(self):
-        '''Evaluates the options for the mode "insert-or-replace".
-        @return: None: error occurred otherwise: the OptionsReplace instance
-        '''
-        options = OptionsInsertOrReplace()
-        toDelete = []
-        for ix, option in enumerate(self._programOptions):
-            boolValue = base.StringUtils.boolOption(
-                'ignore-case', 'i', option)
-            if boolValue is not None:
-                toDelete.append(ix)
-                options.ignoreCase = boolValue
-                continue
-            boolValue = base.StringUtils.boolOption(
-                'above', 'R', option)
-            if boolValue is not None:
-                toDelete.append(ix)
-                options.above = boolValue
-                continue
-            replValue = base.StringUtils.regExprOption(
-                'anchor', 'a', option)
-            if replValue is not None:
-                toDelete.append(ix)
-                options.anchor = replValue
-                continue
-            strValue = base.StringUtils.stringOption(
-                'backup', 'B', option)
-            if strValue is not None:
-                toDelete.append(ix)
-                options.backup = strValue
-                continue
-        return options
+            self._traverser = base.DirTraverser.buildFromOptions(
+                pattern, self._usageInfo, 'insert-or-replace')
+            self._processor = base.TextProcessor.TextProcessor(self._logger)
+            self._traverser._findFiles = self._traverser._findLinks = True
+            self._traverser._findDirs = False
+            for filename in self._traverser.next(self._traverser._directory, 0):
+                self._processor.readFile(filename)
+                self._processor.insertOrReplace(
+                    key, line, options.anchor, options.above)
+                if self._processor._hasChanged:
+                    self._processor.writeFile(filename, options.backup)
 
     def replace(self):
         '''Replaces a regular expression in files by a replacement.
@@ -676,27 +542,22 @@ APP-NAME grep "[\w.+-]+@[\w.+-]+" "*.addr" --format-file="=== EMail addresses in
         pattern = self.shiftProgramArgument()
         if pattern is None:
             self.abort('too few arguments')
-        else:
+        elif self.handleOptions():
             self._processor = base.TextProcessor.TextProcessor(self._logger)
             options = self.replaceOptions(True)
             if options is not None:
-                errors = []
-                self._traverser = base.DirTraverser.fromOptions(
-                    pattern, self._programOptions, errors)
-                if errors:
-                    for error in errors:
-                        self._logger.error(error)
-                else:
-                    self._traverser._findFiles = self._traverser._findLinks = True
-                    self._traverser._findDirs = False
-                    for filename in self._traverser.next(self._traverser._directory, 0):
-                        self._processor.readFile(filename)
-                        hits = self._processor.replace(what, replacement, options.prefixBackref,
-                                                       options.notRegularExpr, True, options.wordOnly, options.ignoreCase,
-                                                       options.escActive)
-                        if hits > 0:
-                            self._processor.writeFile(
-                                filename, options.backupExtensions)
+                self._traverser = base.DirTraverser.buildFromOptions(
+                    pattern, self._usageInfo, 'replace')
+                self._traverser._findFiles = self._traverser._findLinks = True
+                self._traverser._findDirs = False
+                for filename in self._traverser.next(self._traverser._directory, 0):
+                    self._processor.readFile(filename)
+                    hits = self._processor.replace(what, replacement, options.prefixBackref,
+                                                   options.rawString, True, options.wordOnly, options.ignoreCase,
+                                                   options.escActive)
+                    if hits > 0:
+                        self._processor.writeFile(
+                            filename, options.backupExtensions)
 
     def replaceMany(self):
         '''Replaces strings by replacements given in a file in files.
@@ -708,7 +569,7 @@ APP-NAME grep "[\w.+-]+@[\w.+-]+" "*.addr" --format-file="=== EMail addresses in
             self.abort('too few arguments')
         elif not os.path.exists(dataFile):
             self.abort('data file does not exists: ' + dataFile)
-        else:
+        elif self.handleOptions():
             what = []
             replacements = []
             lines = base.StringUtils.fromFile(dataFile, '\n')
@@ -720,21 +581,16 @@ APP-NAME grep "[\w.+-]+@[\w.+-]+" "*.addr" --format-file="=== EMail addresses in
             self._processor = base.TextProcessor.TextProcessor(self._logger)
             options = self.replaceOptions(True)
             if options is not None:
-                errors = []
-                self._traverser = base.DirTraverser.fromOptions(
-                    pattern, self._programOptions, errors)
-                if errors:
-                    for error in errors:
-                        self._logger.error(error)
-                else:
-                    self._traverser._findFiles = self._traverser._findLinks = True
-                    self._traverser._findDirs = False
-                    for filename in self._traverser.next(self._traverser._directory, 0):
-                        self._processor.readFile(filename)
-                        hits = self._processor.replaceMany(what, replacements)
-                        if hits > 0:
-                            self._processor.writeFile(
-                                filename, options.backupExtensions)
+                self._traverser = base.DirTraverser.buildFromOptions(
+                    pattern, self._usageInfo, 'replace-many')
+                self._traverser._findFiles = self._traverser._findLinks = True
+                self._traverser._findDirs = False
+                for filename in self._traverser.next(self._traverser._directory, 0):
+                    self._processor.readFile(filename)
+                    hits = self._processor.replaceMany(what, replacements)
+                    if hits > 0:
+                        self._processor.writeFile(
+                            filename, options.backupExtensions)
 
     def replaceOptions(self, fileOptions):
         '''Evaluates the options for the mode "replace", "replace-string" and "replace-many".
@@ -742,51 +598,17 @@ APP-NAME grep "[\w.+-]+@[\w.+-]+" "*.addr" --format-file="=== EMail addresses in
         @return: None: error occurred otherwise: the OptionsReplace instance
         '''
         options = OptionsReplace()
-        toDelete = []
-        for ix, option in enumerate(self._programOptions):
-            boolValue = base.StringUtils.boolOption(
-                'word-regexpr', 'w', option)
-            if boolValue is not None:
-                toDelete.append(ix)
-                options.wordOnly = boolValue
-                continue
-            boolValue = base.StringUtils.boolOption(
-                'esc-active', 'e', option)
-            if boolValue is not None:
-                toDelete.append(ix)
-                options.escActive = boolValue
-                continue
-            boolValue = base.StringUtils.boolOption(
-                'ignore-case', 'i', option)
-            if boolValue is not None:
-                toDelete.append(ix)
-                options.ignoreCase = boolValue
-                continue
-            boolValue = base.StringUtils.boolOption(
-                'not-regexpr', 'R', option)
-            if boolValue is not None:
-                toDelete.append(ix)
-                options.notRegularExpr = boolValue
-                continue
-            strValue = base.StringUtils.stringOption(
-                'prefix-backref', 'b', option)
-            if strValue is not None:
-                if len(strValue) != 1:
-                    self.argumentError(
-                        'prefix-backref must have length 1, not ' + strValue)
-                    options = None
-                    break
-                toDelete.append(ix)
-                options.prefixBackref = strValue
-                continue
-            if not fileOptions:
-                continue
-            strValue = base.StringUtils.stringOption(
-                'backup', 'B', option)
-            if strValue is not None:
-                toDelete.append(ix)
-                options.backupExtensions = strValue
-                continue
+        options.ignoreCase = self._optionProcessor.valueOf('ignore-case')
+        options.wordOnly = self._optionProcessor.valueOf('word-regexpr')
+        options.prefixBackref = self._optionProcessor.valueOf('prefix-backref')
+        options.rawString = self._optionProcessor.valueOf('raw-string')
+        options.escActive = self._optionProcessor.valueOf('esc-active')
+        if fileOptions:
+            options.backupExtensions = self._optionProcessor.valueOf('backup')
+        if options.prefixBackref is not None and len(options.prefixBackref) != 1:
+            self.argumentError(
+                'prefix-backref must have length 1, not ' + options.prefixBackref)
+            options = None
         return options
 
     def replaceString(self):
@@ -798,13 +620,13 @@ APP-NAME grep "[\w.+-]+@[\w.+-]+" "*.addr" --format-file="=== EMail addresses in
         inputString = self.shiftProgramArgument()
         if inputString is None:
             self.abort('too few arguments')
-        else:
+        elif self.handleOptions():
             self._processor = base.TextProcessor.TextProcessor(self._logger)
-            options = self.replaceOptions(True)
+            options = self.replaceOptions(False)
             if options is not None:
                 self._processor.setContent(inputString)
                 self._processor.replace(what, replacement, options.prefixBackref,
-                                        options.notRegularExpr, True, options.wordOnly, options.ignoreCase)
+                                        options.rawString, True, options.wordOnly, options.ignoreCase, options.escActive)
                 info = '\n'.join(self._processor._lines)
                 self._resultText = info
                 print(info)

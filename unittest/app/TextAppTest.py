@@ -28,12 +28,12 @@ class TextAppTest(UnitTestCase):
 
     def _createConfig(self):
         self._configFile = self.tempFile(
-            'satellite.conf', 'unittest.txt', 'textboxx')
+            'text.conf', 'unittest.txt')
         self._configDir = os.path.dirname(self._configFile)
-        self._logFile = self._configDir + os.sep + 'test.log'
-        base.StringUtils.toFile(self._configFile, '''# created by TextApp
-logger={}
-'''.format(self._logFile))
+        self._logFile = os.path.join(self._configDir, 'test.log')
+        base.StringUtils.toFile(self._configFile, f'''# created by TextApp
+logfile={self._logFile}
+''')
 
     def _finish(self):
         shutil.rmtree(self.tempDir('unittest.txt'))
@@ -41,24 +41,24 @@ logger={}
     def testInstall(self):
         if DEBUG:
             return
-        app.TextApp.main(['-v3', '--test-target=' + self._configDir, '--test-source=' + self._configDir, '-c' + self._configDir,
+        app.TextApp.main(['-v3', f'--log-file={self._logFile}', f'--dir-unittest={self._configDir}', f'-c{self._configDir}',
                           'install', 'osboxx'
                           ])
         application = app.BaseApp.BaseApp.lastInstance()
         self.assertIsEqual(0, application._logger._errors)
-        fn = self._configDir + os.sep + 'text.conf'
+        fn = os.path.join(self._configDir, 'text.conf')
         self.assertFileExists(fn)
-        self.assertFileContent('''# created by TextApp
-logfile=/var/log/local/textboxx.log
-'''.format(), fn)
+        self.assertFileContent(f'''# created by TextApp
+logfile={self._logFile}
+''', fn)
 
     def testUninstall(self):
         if DEBUG:
             return
         base.FileHelper.clearDirectory(self._configDir)
-        fnApp = self._configDir + os.sep + 'textboxx'
-        base.StringUtils.toFile(fnApp, 'application')
-        app.TextApp.main(['-v3', '--test-target=' + self._configDir, '--test-source=' + self._configDir, '-c' + self._configDir,
+        fnApp = os.path.join(self._configDir, 'bin/textboxx')
+        base.StringUtils.toFile(fnApp, 'application', ensureParent=True)
+        app.TextApp.main(['-v3', f'--dir-unittest={self._configDir}', f'-c{self._configDir}',
                           'uninstall', '--service=textboxx'
                           ])
         email = app.BaseApp.BaseApp.lastInstance()
@@ -190,8 +190,7 @@ BCD''')
         self.assertMatches('test1.txt-2:xy123', application._resultLines[0])
 
     def testGrepWordMatchOnly(self):
-        if DEBUG:
-            return
+        if DEBUG: return
         fn = self.tempFile('test1.txt', 'grep')
         base.StringUtils.toFile(fn, '''ab.c
 xy123
@@ -206,7 +205,7 @@ B._C.D''')
         self.assertMatches('test1.txt-3:_C', application._resultLines[1])
 
     def testGrepAboveContext(self):
-        # if DEBUG: return
+        if DEBUG: return
         fn = self.tempFile('test1.txt', 'grep')
         base.StringUtils.toFile(fn, 'a\nb\nc\nd\ne\nf')
         app.TextApp.main(['-v3',
@@ -239,8 +238,7 @@ B._C.D''')
         self.assertMatches('test1.txt-7:g', application._resultLines[5])
 
     def testGrepBelowAboveContext(self):
-        if DEBUG:
-            return
+        if DEBUG: return
         fn = self.tempFile('test1.txt', 'grep')
         base.StringUtils.toFile(fn, 'a\nb\nc\nd\ne\nf\ng')
         app.TextApp.main(['-v3',
@@ -248,35 +246,33 @@ B._C.D''')
                           ])
         application = app.BaseApp.BaseApp.lastInstance()
         self.assertIsEqual(0, application._logger._errors)
-        self.assertIsEqual(6, len(application._resultLines))
-        self.assertMatches('test1.txt-1:a', application._resultLines[0])
-        self.assertMatches('test1.txt-2:b', application._resultLines[1])
-        self.assertMatches('test1.txt-3:c', application._resultLines[2])
-        self.assertMatches('test1.txt-5:e', application._resultLines[3])
-        self.assertMatches('test1.txt-6:f', application._resultLines[4])
-        self.assertMatches('test1.txt-7:g', application._resultLines[5])
+        if self.assertIsEqual(6, len(application._resultLines)):
+            self.assertMatches('test1.txt-1:a', application._resultLines[0])
+            self.assertMatches('test1.txt-2:b', application._resultLines[1])
+            self.assertMatches('test1.txt-3:c', application._resultLines[2])
+            self.assertMatches('test1.txt-5:e', application._resultLines[3])
+            self.assertMatches('test1.txt-6:f', application._resultLines[4])
+            self.assertMatches('test1.txt-7:g', application._resultLines[5])
 
     def testGrepAboveBelowChars(self):
-        if DEBUG:
-            return
+        #if DEBUG: return
         fn = self.tempFile('test1.txt', 'grep')
         base.StringUtils.toFile(fn, '''Version: 12.33
 1.1+2*4.99
 ''')
         app.TextApp.main(['-v3',
-                          'grep', r'\d+(\.\d+)?', fn, '-b1', '--bolow-chars=1', '--line-number', '-a2', '--above-chars=2', '-f%t'
+                          'grep', r'\d+(\.\d+)?', fn, '-b1', '--below-chars=1', '--line-number', '-a2', '--above-chars=2', '-f%t'
                           ])
         application = app.BaseApp.BaseApp.lastInstance()
         self.assertIsEqual(0, application._logger._errors)
-        self.assertIsEqual(4, len(application._resultLines))
-        self.assertIsEqual(': 12.33', application._resultLines[0])
-        self.assertIsEqual('1.1+', application._resultLines[1])
-        self.assertIsEqual('1+2*', application._resultLines[2])
-        self.assertIsEqual('2*4.99', application._resultLines[3])
+        if self.assertIsEqual(4, len(application._resultLines)):
+            self.assertIsEqual(': 12.33', application._resultLines[0])
+            self.assertIsEqual('1.1+', application._resultLines[1])
+            self.assertIsEqual('1+2*', application._resultLines[2])
+            self.assertIsEqual('2*4.99', application._resultLines[3])
 
     def testReplace(self):
-        if DEBUG:
-            return
+        if DEBUG: return
         fn = self.tempFile('test1.txt', 'replace')
         base.StringUtils.toFile(fn, '''line 1
 version: 12.33
@@ -299,7 +295,7 @@ bla bla
         fn = self.tempFile('test2.txt', 'replace')
         base.StringUtils.toFile(fn, r'(\d+)')
         app.TextApp.main(['-v4',
-                          'replace', r'(\d+)', '...', fn, '-R', '--not-regexpr'
+                          'replace', r'(\d+)', '...', fn, '-R', '--raw-string'
                           ])
         application = app.BaseApp.BaseApp.lastInstance()
         self.assertIsEqual(0, application._logger._errors)
@@ -338,7 +334,7 @@ a bcY XXXX
 ''', fn)
 
     def testInsertOrReplace(self):
-        # if DEBUG: return
+        if DEBUG: return
         fn = self.tempFile('php.ini', 'replace')
         base.StringUtils.toFile(fn, r'''#
 max_memory=2048M

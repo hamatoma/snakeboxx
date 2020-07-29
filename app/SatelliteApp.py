@@ -118,12 +118,27 @@ hostname=caribou
 ''', '''APP-NAME test cloud 3 5
 ''')
         del self._usageInfo._descriptions['daemon']
-        self._usageInfo.addMode('daemon', '''daemon <servicename> [--count=<count> [--interval=<interval>]]
+        self._usageInfo.addMode('daemon', '''daemon <servicename> [<options>]
  <servicename>: the name of the SystemD service
- <count>: number of rounds: in one round all cloud state infos will be sent default: forever
- <interval>: time between two send rounds: default: see configuration file
 ''', '''APP-NAME daemon satbutt --count=1 --interval=2
 ''')
+
+    def buildUsageOptions(self, mode=None):
+        '''Adds the options for a given mode.
+        @param mode: None or the mode for which the option is added
+        '''
+        def add(mode, opt):
+            self._usageInfo.addModeOption(mode, opt)
+
+        if mode is None:
+            mode = self._mainMode
+        if mode == 'test':
+            pass
+        elif mode == 'daemon':
+            add(mode, base.UsageInfo.Option('count', 'c',
+                                            'number of rounds: in one round all cloud state infos will be sent default: forever', 'int'))
+            add(mode, base.UsageInfo.Option('interval', 'i',
+                                            'time (seconds) between two send rounds: default: see configuration file', 'int'))
 
     def cloudInit(self, startAtOnce=False, count=None, interval=None):
         '''Initializes the cloud sending actions.
@@ -191,24 +206,15 @@ hostname=caribou
         serviceName = self.shiftProgramArgument()
         if serviceName is None:
             self.abort('missing <servicename>')
-        else:
+        elif self.handleOptions():
             base.FileHelper.ensureDirectory(
                 os.path.dirname(self.reloadRequestFile(serviceName)))
             self._scheduler = base.Scheduler.Scheduler(self._logger)
             self._webDashServer = self._configuration.getString(
                 'wdfiller.url', 'http://localhost')
             self._client = net.HttpClient.HttpClient(self._logger)
-            count = None
-            interval = None
-            for opt in self._programOptions:
-                value = base.StringUtils.intOption('count', 'c', opt)
-                if value is not None:
-                    count = value
-                    continue
-                value = base.StringUtils.intOption('interval', 'i', opt)
-                if value is not None:
-                    interval = value
-                    continue
+            count = self._optionProcessor.valueOf('count')
+            interval = self._optionProcessor.valueOf('interval')
             kinds = self._configuration.getString('wdfiller.kinds', '')
             if kinds.find('cloud') >= 0:
                 self.cloudInit(True, count, interval)
@@ -460,26 +466,25 @@ hostname=caribou
         '''Tests a function.
         '''
         kind = self.shiftProgramArgument()
+        count = base.StringUtils.asInt(self.shiftProgramArgument('1'))
+        interval = base.StringUtils.asInt(self.shiftProgramArgument('1'))
         if kind is None:
             self.abort('missing kind')
-        else:
-            count = base.StringUtils.asInt(self.shiftProgramArgument('1'))
-            interval = base.StringUtils.asInt(self.shiftProgramArgument('1'))
-            if count is None:
-                self.abort('<count> is not an integer')
-            elif interval is None:
-                self.abort('<interval> is not an integer')
-            else:
-                for ix in range(count):
-                    if kind == 'cloud':
-                        self.testCloud(count, interval)
-                    elif kind in ('filesystem', 'fs'):
-                        self.testFilesystems(count, interval)
-                    else:
-                        self.abort('unknown kind: ' + kind)
-                        break
-                    time.sleep(interval)
-                base.StringUtils.avoidWarning(ix)
+        elif count is None:
+            self.abort('<count> is not an integer')
+        elif interval is None:
+            self.abort('<interval> is not an integer')
+        elif self.handleOptions():
+            for ix in range(count):
+                if kind == 'cloud':
+                    self.testCloud(count, interval)
+                elif kind in ('filesystem', 'fs'):
+                    self.testFilesystems(count, interval)
+                else:
+                    self.abort('unknown kind: ' + kind)
+                    break
+                time.sleep(interval)
+            base.StringUtils.avoidWarning(ix)
 
     def testCloud(self, count, interval):
         '''Sends a limited count of cloud infos for test purposes.

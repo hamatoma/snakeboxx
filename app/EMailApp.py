@@ -76,14 +76,24 @@ job.clean.interval=3600
  <recipent>: the email address of the receipient. Separate more than one with '+'
  <subject>: the text of the subject field
  <body>: the body of the email or (if preceeded by '@' a filename with the body.
- <opts>:
-  -c<carbon-copy> or --cc=<carbon-copy>
-   additional recipient(s) seen by all recipients. Separate more than one with '+'
-  -b<blind-carbon-copy> or --bcc=<blind-carbon-copy>
-   additional recipient(s) not seen by the recipients. Separate more than one with '+'
-''', '''APP-NAME send --cc=jonny@x.de eva@x.com+adam@x.fr "Greetings" "Hi guys"
-APP-NAME send --bcc=jonny@x.de+joe@x.de eva@x.com+adam@x.fr "Greetings" @birthday.html
+''', '''APP-NAME send --carbon-copy=jonny@x.de eva@x.com+adam@x.fr "Greetings" "Hi guys"
+APP-NAME send --blind-carbon-copy=jonny@x.de+joe@x.de eva@x.com+adam@x.fr "Greetings" @birthday.html
 ''')
+
+    def buildUsageOptions(self, mode=None):
+        '''Adds the options for a given mode.
+        @param mode: None or the mode for which the option is added
+        '''
+        def add(mode, opt):
+            self._usageInfo.addModeOption(mode, opt)
+
+        if mode is None:
+            mode = self._mainMode
+        if mode == 'send':
+            add(mode, base.UsageInfo.Option('carbon-copy', 'c',
+                                            'additional recipient(s) seen by all recipients. Separate more than one with "+"'))
+            add(mode, base.UsageInfo.Option('blind-carbon-copy', 'b',
+                                            'additional recipient(s) not seen by all recipients. Separate more than one with "+"'))
 
     def daemonAction(self, reloadRequest):
         '''Does the real thing in the daemon (= service).

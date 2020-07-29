@@ -16,10 +16,14 @@ REG_EXPR_DATE = re.compile(r'^(\d{4})[.-](\d\d?)[.-](\d\d?)')
 REG_EXPR_DATE2 = re.compile(r'^(\d\d?)[.](\d\d?)[.](\d{4})')
 # ...................................1.....1.2....2 a..3.....3a
 REG_EXPR_TIME = re.compile(r'^(\d\d?):(\d\d?)(?::(\d\d?))?$')
-REG_EXPR_INT = re.compile(r'^0[xX]([0-9a-fA-F]+)|0([0-7]+)|([+-]?\d+)$')
-REG_EXPR_SIZE = re.compile(r'^(\d+)((?:[kmgt]i?)?(?:b(?:ytes?)?)?)?$', base.Const.IGNORE_CASE)
-#REG_EXPR_ESC = re.compile(r'(\\U........|\\u....|\\x..|\\[0-7]{1,3}|\\N\{[^}]+\}|\\[\\'"abfnrtv])', base.Const.RE_UNICODE)
-REG_EXPR_ESC = re.compile(r'''(\\U[0-9a-fA-F]{8}|\\u[0-9a-fA-F]{4}|\\x[0-9a-fA-F]{2}|\\[0-7]{1,3}|\\N\{[^}]+\}|\\[\\'"abfnrtv])''', base.Const.RE_UNICODE)
+REG_EXPR_INT = re.compile(r'^0[xX]([0-9a-fA-F]+)|0o([0-7]+)|(\d+)$')
+REG_EXPR_SIZE = re.compile(
+    r'^(\d+)((?:[kmgt]i?)?(?:b(?:ytes?)?)?)?$', base.Const.IGNORE_CASE)
+# REG_EXPR_ESC =
+# re.compile(r'(\\U........|\\u....|\\x..|\\[0-7]{1,3}|\\N\{[^}]+\}|\\[\\'"abfnrtv])',
+# base.Const.RE_UNICODE)
+REG_EXPR_ESC = re.compile(r'''(\\U[0-9a-fA-F]{8}|\\u[0-9a-fA-F]{4}|\\x[0-9a-fA-F][0-9a-fA-F]|\\[0-7]{1,3}'
+    + '|\\N\{[^}]+\}|\\[\\'"abfnrtv])''', base.Const.RE_UNICODE)
 #    ( \\U........      # 8-digit hex escapes
 #    | \\u....          # 4-digit hex escapes
 #    | \\x..            # 2-digit hex escapes
@@ -46,9 +50,28 @@ def arrayContains(lines, regExpr):
     return found
 
 
-def asInt(value, defaultValue=None):
-    '''Tests whether a value is an integer. If not the defaultValue is returned. Othewise the integer is returned.
+def asFloat(value, defaultValue=None):
+    '''Tests whether a value is an floating point number. If not the defaultValue is returned. Otherwise the float is returned.
     @param value: string value to test
+    @param defaultValue: the return value if value is not an float
+    @return: defaultValue: the value is not an integer Otherwise: the value as float
+    '''
+    rc = defaultValue
+    try:
+        rc = float(value)
+    except ValueError:
+        # may be a hex number...
+        rc = asInt(value, defaultValue)
+        if rc is not None:
+            rc = float(rc)
+    return rc
+
+
+def asInt(value, defaultValue=None, signIsAllowed=True):
+    '''Tests whether a value is an integer. If not the defaultValue is returned. Otherwise the integer is returned.
+    @param value: string value to test
+    @param defaultValue: the return value if value is not an integer
+    @param signIsAllowed: False: a preceeding '-' or '+' in value is an error
     @return: defaultValue: the value is not an integer Otherwise: the value as integer
     '''
     rc = defaultValue
@@ -56,6 +79,9 @@ def asInt(value, defaultValue=None):
         if isinstance(value, int):
             rc = value
         else:
+            negative = value.startswith('-')
+            if signIsAllowed and (negative or value.startswith('+')):
+                value = value[1:]
             matcher = REG_EXPR_INT.match(value)
             if matcher is None:
                 rc = defaultValue
@@ -66,6 +92,7 @@ def asInt(value, defaultValue=None):
                     rc = int(value, 8)
                 else:
                     rc = int(value)
+                rc = -rc if negative else rc
     return rc
 
 
@@ -76,28 +103,6 @@ def avoidWarning(unusedVariable):
     # do nothing
 
 
-def boolOption(longName, shortName, option):
-    '''Tests whether an option is a boolean option.
-    @param longName: the long option name, e.g. 'verbose-level'
-    @param shortName: the short option name, e.g. 'v'
-    @param option: the option to inspect, e.g. '--user-id=129' or '-u129'
-    @return: None: opt is not the given option
-        otherwise: the value of the option, e.g. True
-    '''
-    rc = None
-    strValue = stringOption(longName, shortName, option)
-    if strValue is not None:
-        strValue = strValue.lower()
-        if strValue == '':
-            rc = True
-        elif strValue in ['true', 'false', 't', 'f']:
-            rc = strValue[0] == 't'
-        else:
-            raise ValueError(
-                '{}: bool expected ("true", "false"), not "{}": '.format(longName, strValue))
-    return rc
-
-
 def escChars(text):
     '''Return the text with escaped meta characters like \n, \t, \\.
     Inversion: @see unescChars()
@@ -105,7 +110,8 @@ def escChars(text):
     @param text: text to convert
     @return: the text with escaped chars.
     '''
-    rc = text.replace('\\', '\\\\').replace('\n', '\\n').replace('\r', '\\r').replace('\t', '\\t').replace('\b', '\\b')
+    rc = text.replace('\\', '\\\\').replace('\n', '\\n').replace(
+        '\r', '\\r').replace('\t', '\\t').replace('\b', '\\b').replace('\a', '\\a')
     return rc
 
 
@@ -221,25 +227,6 @@ def indentLines(lines, indention, indentStep=' '):
     for line in lines:
         lines2.append(indentStep * indention + line.lstrip())
     rc = '\n'.join(lines2)
-    return rc
-
-
-def intOption(longName, shortName, option):
-    '''Tests whether an option is a int option.
-    @param longName: the long option name, e.g. 'group-name'
-    @param shortName: the short option name, e.g. 'n'
-    @param option: the option to inspect, e.g. '--user-id=129' or '-u129'
-    @return: None: opt is not the given option
-        otherwise: the value of the option, e.g. 129
-    '''
-    rc = None
-    strValue = stringOption(longName, shortName, option)
-    if strValue is not None:
-        try:
-            rc = int(strValue)
-        except ValueError:
-            raise ValueError(
-                '{}: integer expected, not "{}": '.format(longName, strValue))
     return rc
 
 
@@ -372,10 +359,11 @@ def minimizeStringUtfError(line, logger=None):
             rc += minimizeStringUtfError(line[half:], logger)
     return rc
 
+
 def parseDateTime(text, errors, dateOnly=False):
     '''Parses a string representing a date or a datetime.
     @param text: the text to parse
-    @param errors: IN/OUT: a list: error message will be appended here 
+    @param errors: IN/OUT: a list: error message will be appended here
     @param dateOnly: True: only dates are allowed
     @return: None: text is not a date
         a DateTime instance
@@ -384,13 +372,11 @@ def parseDateTime(text, errors, dateOnly=False):
     matcher = REG_EXPR_DATE.match(text)
     if matcher is not None:
         length = len(matcher.group(0))
-        text = text[length:]
-        if len(text) > 0 and text[0] in ['-', '/', 'T', '\t', ' ']:
-            text = text[1:]
         try:
             rc = datetime.datetime(int(matcher.group(1)), int(
                 matcher.group(2)), int(matcher.group(3)))
-            if len(text) > 0 and text[0] in ['-', '/', 'T', '\t', ' ']:
+            text = text[length:]
+            if text and text[0] in ('-', '/', 'T', '\t', ' '):
                 text = text[1:]
         except ValueError as exc:
             errors.append(str(exc) + ': ' + text)
@@ -404,7 +390,7 @@ def parseDateTime(text, errors, dateOnly=False):
                 rc = datetime.datetime(int(matcher.group(3)), int(
                     matcher.group(2)), int(matcher.group(1)))
                 text = text[length:]
-                if len(text) > 0 and text[0] in ['-', '/', 'T', '\t', ' ']:
+                if text and text[0] in ('-', '/', 'T', '\t', ' '):
                     text = text[1:]
             except ValueError as exc:
                 errors.append(str(exc) + ': ' + text)
@@ -412,13 +398,15 @@ def parseDateTime(text, errors, dateOnly=False):
         matcher = REG_EXPR_TIME.match(text)
         if matcher is not None:
             sec = 0 if matcher.lastindex < 3 else int(matcher.group(3))
-            delta = datetime.timedelta(hours=int(matcher.group(1)), minutes=int(matcher.group(2)), seconds=sec)
+            delta = datetime.timedelta(hours=int(matcher.group(
+                1)), minutes=int(matcher.group(2)), seconds=sec)
             rc = rc + delta
             text = text[len(matcher.group(0)):]
     if rc is not None and text != '':
         rc = None
         errors.append(f'unexpected tail of a date: {text}')
     return rc
+
 
 def parseSize(size, errors):
     '''Parses string with a filesize syntax.
@@ -458,6 +446,7 @@ def parseSize(size, errors):
                 rc *= factor
     return rc
 
+
 def privateConfig():
     '''Returns the "private" configuration.
     This is a configuration for private data. This file is not in the GIT repository.
@@ -480,7 +469,7 @@ def regExprCompile(pattern, location, logger=None, isCaseSensitive=False):
     try:
         rc = re.compile(
             pattern, 0 if isCaseSensitive else base.Const.IGNORE_CASE)
-    except Exception as exc:
+    except re.error as exc:
         global LOGGER
         msg = 'error in regular expression in {}: {}'.format(
             location, str(exc))
@@ -490,41 +479,6 @@ def regExprCompile(pattern, location, logger=None, isCaseSensitive=False):
             print('+++ ' + msg)
         else:
             logger.error(msg)
-    return rc
-
-
-def regExprOption(longName, shortName, option, isCaseSensitive=False):
-    '''Tests whether an option is a option with the syntax of a regular expression.
-    @param longName: the long option name, e.g. 'group-name'
-    @param shortName: the short option name, e.g. 'n'
-    @param option: the option to inspect, e.g. '--group-name=admin' or '-nadmin'
-    @param isCaseSensitive: True: the pattern is case sensitiv
-    @return: None: opt is not the given option
-        a string: the error message
-        a RegExpr instance: the compiled regular expression
-    '''
-    rc = stringOption(longName, shortName, option)
-    if rc is not None:
-        rc = regExprCompile(rc, '--' + longName, None, isCaseSensitive)
-        if rc is None:
-            rc = 'not a regular expression in --{}: {}'.format(
-                longName, option)
-    return rc
-
-def sizeOption(longName, shortName, option, errors):
-    '''Tests whether an option is a option defining a filesize, e.g. '144MiByte'
-    @param longName: the long option name, e.g. 'group-name'
-    @param shortName: the short option name, e.g. 'n'
-    @param option: the option to inspect, e.g. '--min-size=10k'
-    @param errors: OUT: error messages will be appended to this list
-    @return: None: opt is not the given option
-        a string: the error message
-        an int the size
-    '''
-    rc = None
-    size = stringOption(longName, shortName, option)
-    if size is not None:
-        rc = parseSize(size, errors)
     return rc
 
 
@@ -545,34 +499,19 @@ def setLogger(logger):
     LOGGER = logger
 
 
-def stringOption(longName, shortName, option):
-    '''Tests whether an option is a string option.
-    @param longName: the long option name, e.g. 'group-name'
-    @param shortName: the short option name, e.g. 'n'
-    @param option: the option to inspect, e.g. '--group-name=admin' or '-nadmin'
-    @return: None: opt is not the given option
-        otherwise: the value of the string, e.g. 'admin'
-    '''
-    rc = None
-    len2 = len(longName) + 2
-    if option.startswith('--' + longName):
-        if len(option) == len2:
-            rc = ''
-        elif option[len2] == '=':
-            rc = option[len2 + 1:]
-    elif shortName is not None and option.startswith('-' + shortName):
-        rc = option[2:]
-    return rc
-
-
-def toFile(filename, content, separator='', fileMode=None, user=None, group=None):
+def toFile(filename, content, separator='', fileMode=None, user=None, group=None, ensureParent=False):
     '''Writes a string into a file.
     @param filename: the name of the file to write
     @param content: the string to write
     @param fileMode: None or the access rights of the file, e.g. 0o755
     @param user: None or the user name or user id to set (chown)
     @param gid: None or the group name or group id to set (chown)
+    @param ensureParent: True: the parent directory is created if needed
     '''
+    if ensureParent:
+        parent = os.path.dirname(filename)
+        if parent != '':
+            base.FileHelper.ensureDirectory(parent)
     if isinstance(content, list):
         content = separator.join(content)
     mode = 'wb' if isinstance(content, bytes) else 'w'
@@ -587,8 +526,7 @@ def toFile(filename, content, separator='', fileMode=None, user=None, group=None
     except OSError as exc:
         global LOGGER
         if LOGGER is not None:
-            LOGGER.error('cannot write to {}: {} [{}]'.format(
-                filename, str(exc), str(type(exc))))
+            LOGGER.error(f'cannot write to {filename}: {exc} [{type(exc)}]')
 
 
 def toFloat(value):
@@ -601,6 +539,8 @@ def toFloat(value):
     '''
     if isinstance(value, float):
         rc = value
+    elif isinstance(value, int):
+        rc = float(value)
     else:
         if not isinstance(value, str):
             value = str(value)
@@ -625,19 +565,9 @@ def toFloat(value):
                 if matcher.group(3):
                     rc += int(matcher.group(3))
             else:
-                matcher = REG_EXPR_INT.match(value)
-                if matcher is not None:
-                    if matcher.group(3):
-                        rc = float(matcher.group(3))
-                    elif matcher.group(1):
-                        rc = float(int(value[2:], 16))
-                    elif matcher.group(2):
-                        rc = float(int(value, 8))
-                else:
-                    try:
-                        rc = float(value)
-                    except ValueError:
-                        rc = 'float (or int or date(time)) expected, found: ' + value
+                rc = asFloat(value)
+                if rc is None:
+                    rc = 'float (or int or date(time)) expected, found: ' + value
     return rc
 
 
@@ -767,7 +697,7 @@ def unescChars(text):
     def decode_match(match):
         return codecs.decode(match.group(0), 'unicode-escape')
 
-    rc =  REG_EXPR_ESC.sub(decode_match, text)
+    rc = REG_EXPR_ESC.sub(decode_match, text)
     return rc
 
 
